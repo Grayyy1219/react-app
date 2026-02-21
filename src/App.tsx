@@ -1,7 +1,10 @@
-import Message from './Message';
-import List from './components/ListGroup';
+import Questioner from "./components/Questioner";
 
-function App(){
-  return <div><Message /><List /></div>
+function App() {
+  return (
+    <div>
+      <Questioner />
+    </div>
+  );
 }
 export default App;
