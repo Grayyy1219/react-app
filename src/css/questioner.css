@@ -1,5 +1,5 @@
 .quiz-container {
-  height: 100vh;
+  height:100vh;
   background: linear-gradient(135deg, #46178f, #2b0a5c);
   display: flex;
   flex-direction: column;
@@ -69,7 +69,7 @@
 @media (max-width: 768px) {
   .choices {
     grid-template-columns: 1fr, 1fr;
-      gap: 10px;
+    gap: 10px;
   }
 
   .question-box {

@@ -1,6 +1,25 @@
-
-*{
+:root {
+  --bg: #0f1115;
+  --panel: #141824;
+  --text: #e9ecf3;
+  --muted: #9aa3b2;
+  --accent: #8b5cf6;
+  --accent-2: #c4b5fd;
+  --ring-track: #2a2f3f;
+  --ring-fill: #a78bfa;
+  --bg-color: #151f28;
+  --main-color: #8b5cf6;
+  --text-color: #333;
+  --second-text-color: #555;
+  --white-color: #fff;
+  --cover-color: linear-gradient(135deg, #120a24 0%, #1e1336 55%, #2b1a4a 100%);
+  --pages-color: linear-gradient(90deg, #fff, #ddd);
+  --border: 0.125rem solid #8b5cf6;
+  --box-shadow: 0 0 0.8rem rgba(0, 0, 0, 0.2);
+}
+* {
   box-sizing: border-box;
   padding: 0;
   margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
 }
