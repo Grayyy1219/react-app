@@ -1,24 +1,11 @@
 import React, { useState } from "react";
 import "../css/addquestion.css";
-
-const FIREBASE_DB_URL =
-  "https://for-mae-default-rtdb.asia-southeast1.firebasedatabase.app";
-
-const QUESTION_CATEGORIES = [
-  "General Information",
-  "Verbal Ability",
-  "Analytical Ability",
-  "Numerical Ability",
-] as const;
-
-type QuestionCategory = (typeof QUESTION_CATEGORIES)[number];
-
-const CATEGORY_KEYS: Record<QuestionCategory, string> = {
-  "General Information": "general_information",
-  "Verbal Ability": "verbal_ability",
-  "Analytical Ability": "analytical_ability",
-  "Numerical Ability": "numerical_ability",
-};
+import {
+  CATEGORY_KEYS,
+  FIREBASE_DB_URL,
+  QUESTION_CATEGORIES,
+  type QuestionCategory,
+} from "../constants/questions";
 
 function AddQuestion() {
   const [question, setQuestion] = useState("");
