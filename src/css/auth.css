@@ -1,0 +1,66 @@
+.auth-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.auth-panel {
+  width: min(92vw, 380px);
+  padding: 20px;
+  border-radius: 12px;
+  background: rgba(20, 24, 36, 0.95);
+  color: #e9ecf3;
+}
+
+.auth-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.close-btn {
+  font-size: 14px;
+  color: #c4b5fd;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.auth-form input,
+.auth-form select,
+.auth-form button {
+  border: 1px solid #3b4254;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 14px;
+}
+
+.auth-form button {
+  background: #8b5cf6;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+}
+
+.role-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.toggle-auth-mode {
+  margin-top: 12px;
+  color: #c4b5fd;
+  background: none;
+  border: none;
+  cursor: pointer;
+}

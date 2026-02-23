@@ -64,44 +64,42 @@ function AddQuestion() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="a_q_form">
-      <h2>Add Question</h2>
-
-      <input
-        type="text"
-        className="question_input"
-        value={question}
-        onChange={(event) => setQuestion(event.target.value)}
-        placeholder="Enter your question..."
-        required
-      />
-
-      <div className="options_container">
-        {options.map((option, index) => (
-          <div className="option_row" key={index}>
-            <input
-              type="checkbox"
-              checked={correctIndex === index}
-              onChange={() => handleCheckboxChange(index)}
-              className="correct_checkbox"
-            />
-
-            <input
-              type="text"
-              value={option}
-              onChange={(event) => updateOption(index, event.target.value)}
-              placeholder={`Option ${index + 1}`}
-              required
-              className="option_input"
-            />
-          </div>
-        ))}
-      </div>
-
-      <button type="submit" className="a_q_btn" disabled={isSaving}>
-        {isSaving ? "Saving..." : "Add Question"}
-      </button>
-    </form>
+    <div className="questioner_div">
+      <form onSubmit={handleSubmit} className="a_q_form">
+        <h2>Add Question</h2>
+        <input
+          type="text"
+          className="question_input"
+          value={question}
+          onChange={(event) => setQuestion(event.target.value)}
+          placeholder="Enter your question..."
+          required
+        />
+        <div className="options_container">
+          {options.map((option, index) => (
+            <div className="option_row" key={index}>
+              <input
+                type="checkbox"
+                checked={correctIndex === index}
+                onChange={() => handleCheckboxChange(index)}
+                className="correct_checkbox"
+              />
+              <input
+                type="text"
+                value={option}
+                onChange={(event) => updateOption(index, event.target.value)}
+                placeholder={`Option ${index + 1}`}
+                required
+                className="option_input"
+              />
+            </div>
+          ))}
+        </div>
+        <button type="submit" className="a_q_btn" disabled={isSaving}>
+          {isSaving ? "Saving..." : "Add Question"}
+        </button>
+      </form>
+    </div>
   );
 }
 
