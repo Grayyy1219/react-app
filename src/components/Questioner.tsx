@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "../css/questioner.css";
 import {
   ALL_CATEGORIES,
@@ -8,6 +8,12 @@ import {
   type QuestionCategory,
   type QuestionFilter,
 } from "../constants/questions";
+import {
+  getGeneralQuestionStats,
+  getUserQuestionStats,
+  saveQuestionAttempt,
+  toUserKey,
+} from "../firebase";
 
 type QuestionItem = {
   id: string;
@@ -23,7 +29,27 @@ type FirebaseQuestion = {
   correctIndex?: number;
 };
 
-const FEEDBACK_DELAY_MS = 1200;
+const SESSION_KEY = "react-app-user-session";
+
+type QuestionStat = {
+  correct: number;
+  wrong: number;
+};
+
+const getCurrentUserKey = () => {
+  const rawSession = sessionStorage.getItem(SESSION_KEY);
+
+  if (!rawSession) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(rawSession) as { email?: string };
+    return parsed.email ? toUserKey(parsed.email) : null;
+  } catch {
+    return null;
+  }
+};
 
 const normalizeQuestions = (
   category: QuestionCategory,
@@ -59,19 +85,24 @@ const normalizeQuestions = (
     .filter((item): item is QuestionItem => item !== null);
 };
 
-const getQuestionWeight = (questionId: string, masteryByQuestion: Record<string, number>) => {
-  const mastery = masteryByQuestion[questionId] ?? 0;
+const getQuestionWeight = (
+  questionId: string,
+  userStatsByQuestion: Record<string, QuestionStat>,
+  generalStatsByQuestion: Record<string, QuestionStat>,
+) => {
+  const userStats = userStatsByQuestion[questionId] ?? { correct: 0, wrong: 0 };
+  const generalStats = generalStatsByQuestion[questionId] ?? { correct: 0, wrong: 0 };
 
-  if (mastery >= 0) {
-    return 1 / (1 + mastery);
-  }
+  const weightedCorrect = userStats.correct + generalStats.correct * 0.35;
+  const weightedWrong = userStats.wrong + generalStats.wrong * 0.35;
 
-  return 1 + Math.abs(mastery) * 1.5;
+  return (weightedWrong + 1) / (weightedCorrect + 1);
 };
 
 const getWeightedRandomQuestion = (
   questions: QuestionItem[],
-  masteryByQuestion: Record<string, number>,
+  userStatsByQuestion: Record<string, QuestionStat>,
+  generalStatsByQuestion: Record<string, QuestionStat>,
   excludedQuestionId?: string,
 ) => {
   if (questions.length === 0) {
@@ -89,7 +120,7 @@ const getWeightedRandomQuestion = (
 
   const weightedPool = pool.map((question) => ({
     question,
-    weight: getQuestionWeight(question.id, masteryByQuestion),
+    weight: getQuestionWeight(question.id, userStatsByQuestion, generalStatsByQuestion),
   }));
 
   const totalWeight = weightedPool.reduce((sum, item) => sum + item.weight, 0);
@@ -105,15 +136,21 @@ const getWeightedRandomQuestion = (
   return weightedPool[weightedPool.length - 1].question;
 };
 
-const Questioner = () => {
+type QuestionerProps = {
+  isAdmin?: boolean;
+};
+
+const Questioner = ({ isAdmin = false }: QuestionerProps) => {
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
   const [activeFilter, setActiveFilter] = useState<QuestionFilter>(ALL_CATEGORIES);
   const [currentQuestion, setCurrentQuestion] = useState<QuestionItem | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [masteryByQuestion, setMasteryByQuestion] = useState<Record<string, number>>({});
+  const [userStatsByQuestion, setUserStatsByQuestion] = useState<Record<string, QuestionStat>>({});
+  const [generalStatsByQuestion, setGeneralStatsByQuestion] = useState<Record<string, QuestionStat>>(
+    {},
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const answerTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -121,22 +158,28 @@ const Questioner = () => {
       setError(null);
 
       try {
-        const responses = await Promise.all(
-          QUESTION_CATEGORIES.map(async (category) => {
-            const response = await fetch(
-              `${FIREBASE_DB_URL}/questions/${CATEGORY_KEYS[category]}.json`,
-            );
+        const userKey = getCurrentUserKey();
 
-            if (!response.ok) {
-              throw new Error(`Failed to fetch ${category}`);
-            }
+        const questionRequests = QUESTION_CATEGORIES.map(async (category) => {
+          const response = await fetch(`${FIREBASE_DB_URL}/questions/${CATEGORY_KEYS[category]}.json`);
 
-            const data = (await response.json()) as Record<string, FirebaseQuestion> | null;
-            return normalizeQuestions(category, data);
-          }),
-        );
+          if (!response.ok) {
+            throw new Error(`Failed to fetch ${category}`);
+          }
+
+          const data = (await response.json()) as Record<string, FirebaseQuestion> | null;
+          return normalizeQuestions(category, data);
+        });
+
+        const [responses, generalStats, userStats] = await Promise.all([
+          Promise.all(questionRequests),
+          getGeneralQuestionStats(),
+          userKey ? getUserQuestionStats(userKey) : Promise.resolve({}),
+        ]);
 
         setQuestions(responses.flat());
+        setGeneralStatsByQuestion(generalStats);
+        setUserStatsByQuestion(userStats);
       } catch (fetchError) {
         console.error("Failed to load questions", fetchError);
         setError("Unable to load questions right now.");
@@ -148,13 +191,6 @@ const Questioner = () => {
     void fetchQuestions();
   }, []);
 
-  useEffect(() => {
-    return () => {
-      if (answerTimeoutRef.current) {
-        window.clearTimeout(answerTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const filteredQuestions = useMemo(() => {
     if (activeFilter === ALL_CATEGORIES) {
@@ -166,23 +202,26 @@ const Questioner = () => {
 
   const moveToNextQuestion = (
     pool: QuestionItem[],
-    masteryMap: Record<string, number>,
+    userStatsMap: Record<string, QuestionStat>,
+    generalStatsMap: Record<string, QuestionStat>,
     excludedQuestionId?: string,
   ) => {
-    setCurrentQuestion(getWeightedRandomQuestion(pool, masteryMap, excludedQuestionId));
+    setCurrentQuestion(
+      getWeightedRandomQuestion(pool, userStatsMap, generalStatsMap, excludedQuestionId),
+    );
     setSelectedIndex(null);
   };
 
   useEffect(() => {
-    moveToNextQuestion(filteredQuestions, masteryByQuestion);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredQuestions]);
-
-  const showAnotherQuestion = (filter: QuestionFilter) => {
-    if (answerTimeoutRef.current) {
-      window.clearTimeout(answerTimeoutRef.current);
+    if (selectedIndex !== null) {
+      return;
     }
 
+    moveToNextQuestion(filteredQuestions, userStatsByQuestion, generalStatsByQuestion);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredQuestions, selectedIndex]);
+
+  const showAnotherQuestion = (filter: QuestionFilter) => {
     setActiveFilter(filter);
 
     const pool =
@@ -190,7 +229,7 @@ const Questioner = () => {
         ? questions
         : questions.filter((question) => question.category === filter);
 
-    moveToNextQuestion(pool, masteryByQuestion, currentQuestion?.id);
+    moveToNextQuestion(pool, userStatsByQuestion, generalStatsByQuestion, currentQuestion?.id);
   };
 
   const handleAnswerSelect = (index: number) => {
@@ -198,24 +237,43 @@ const Questioner = () => {
       return;
     }
 
-    if (answerTimeoutRef.current) {
-      window.clearTimeout(answerTimeoutRef.current);
-    }
-
     setSelectedIndex(index);
 
     const answeredCorrectly = index === currentQuestion.correctIndex;
+    const userKey = getCurrentUserKey();
+    const currentGeneral = generalStatsByQuestion[currentQuestion.id] ?? { correct: 0, wrong: 0 };
+    const nextGeneral = answeredCorrectly
+      ? { ...currentGeneral, correct: currentGeneral.correct + 1 }
+      : { ...currentGeneral, wrong: currentGeneral.wrong + 1 };
 
-    setMasteryByQuestion((previous) => {
-      const nextValue = (previous[currentQuestion.id] ?? 0) + (answeredCorrectly ? 1 : -1);
-      const nextMap = { ...previous, [currentQuestion.id]: nextValue };
+    void saveQuestionAttempt(currentQuestion.id, answeredCorrectly, userKey);
 
-      answerTimeoutRef.current = window.setTimeout(() => {
-        moveToNextQuestion(filteredQuestions, nextMap, currentQuestion.id);
-      }, FEEDBACK_DELAY_MS);
+    setGeneralStatsByQuestion((previousGeneral) => ({
+      ...previousGeneral,
+      [currentQuestion.id]: nextGeneral,
+    }));
 
-      return nextMap;
+    setUserStatsByQuestion((previous) => {
+      const currentStat = previous[currentQuestion.id] ?? { correct: 0, wrong: 0 };
+      const nextStat = answeredCorrectly
+        ? { ...currentStat, correct: currentStat.correct + 1 }
+        : { ...currentStat, wrong: currentStat.wrong + 1 };
+
+      return { ...previous, [currentQuestion.id]: nextStat };
     });
+  };
+
+  const handleNextQuestion = () => {
+    if (!currentQuestion) {
+      return;
+    }
+
+    moveToNextQuestion(
+      filteredQuestions,
+      userStatsByQuestion,
+      generalStatsByQuestion,
+      currentQuestion.id,
+    );
   };
 
   const isAnswered = selectedIndex !== null && currentQuestion !== null;
@@ -237,6 +295,10 @@ const Questioner = () => {
 
     return "choice-muted";
   };
+
+  const adminCurrentStats = currentQuestion
+    ? generalStatsByQuestion[currentQuestion.id] ?? { correct: 0, wrong: 0 }
+    : null;
 
   return (
     <div className="quiz-container">
@@ -265,6 +327,13 @@ const Questioner = () => {
         {!isLoading && !error && currentQuestion && currentQuestion.question}
       </div>
 
+      {isAdmin && adminCurrentStats && (
+        <div className="admin-question-stats" aria-label="Question stats">
+          <span>✅ Right: {adminCurrentStats.correct}</span>
+          <span>❌ Wrong: {adminCurrentStats.wrong}</span>
+        </div>
+      )}
+
       {isAnswered && currentQuestion && (
         <div className={`answer-feedback ${isCorrectSelection ? "success" : "error"}`}>
           {isCorrectSelection
@@ -286,6 +355,12 @@ const Questioner = () => {
           </button>
         ))}
       </div>
+
+      {isAnswered && (
+        <button type="button" className="next-question-btn" onClick={handleNextQuestion}>
+          Next Question
+        </button>
+      )}
     </div>
   );
 };

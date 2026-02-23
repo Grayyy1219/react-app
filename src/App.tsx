@@ -77,8 +77,8 @@ function App() {
     if (currentPage === "add") {
       return <AddQuestion />;
     }
-    return <Questioner />;
-  }, [currentPage]);
+    return <Questioner isAdmin={userRole === "admin"} />;
+  }, [currentPage, userRole]);
 
   return (
     <>
