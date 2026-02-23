@@ -14,7 +14,7 @@ function Header({ isAdmin, userEmail, onLogout, onOpenLogin }: HeaderProps) {
       <div className="container">
         <div className="view-as">
           <img src={icon} width={24} alt="" />
-          <a className="logo-btn" href="/" aria-label="Go to homepage">
+          <a className="logo-btn" href="/react-app" aria-label="Go to homepage">
             <b>Home</b>
           </a>
         </div>
