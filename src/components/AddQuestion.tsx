@@ -4,8 +4,25 @@ import "../css/addquestion.css";
 const FIREBASE_DB_URL =
   "https://for-mae-default-rtdb.asia-southeast1.firebasedatabase.app";
 
+const QUESTION_CATEGORIES = [
+  "General Information",
+  "Verbal Ability",
+  "Analytical Ability",
+  "Numerical Ability",
+] as const;
+
+type QuestionCategory = (typeof QUESTION_CATEGORIES)[number];
+
+const CATEGORY_KEYS: Record<QuestionCategory, string> = {
+  "General Information": "general_information",
+  "Verbal Ability": "verbal_ability",
+  "Analytical Ability": "analytical_ability",
+  "Numerical Ability": "numerical_ability",
+};
+
 function AddQuestion() {
   const [question, setQuestion] = useState("");
+  const [category, setCategory] = useState<QuestionCategory>("General Information");
   const [options, setOptions] = useState<string[]>(["", "", "", ""]);
   const [correctIndex, setCorrectIndex] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -35,23 +52,30 @@ function AddQuestion() {
 
     setIsSaving(true);
 
+    const selectedCategory = category || "General Information";
+
     try {
-      const response = await fetch(`${FIREBASE_DB_URL}/questions.json`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question: question.trim(),
-          options: options.map((option) => option.trim()),
-          correctIndex,
-          createdAt: Date.now(),
-        }),
-      });
+      const response = await fetch(
+        `${FIREBASE_DB_URL}/questions/${CATEGORY_KEYS[selectedCategory]}.json`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            question: question.trim(),
+            category: selectedCategory,
+            options: options.map((option) => option.trim()),
+            correctIndex,
+            createdAt: Date.now(),
+          }),
+        },
+      );
 
       if (!response.ok) {
         throw new Error("Firebase request failed");
       }
 
       setQuestion("");
+      setCategory("General Information");
       setOptions(["", "", "", ""]);
       setCorrectIndex(null);
       alert("Question added to Firebase.");
@@ -75,6 +99,23 @@ function AddQuestion() {
           placeholder="Enter your question..."
           required
         />
+        <div className="category_field">
+          <label htmlFor="question-category" className="category_label">
+            Category
+          </label>
+          <select
+            id="question-category"
+            className="category_select"
+            value={category}
+            onChange={(event) => setCategory(event.target.value as QuestionCategory)}
+          >
+            {QUESTION_CATEGORIES.map((categoryOption) => (
+              <option key={categoryOption} value={categoryOption}>
+                {categoryOption}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="options_container">
           {options.map((option, index) => (
             <div className="option_row" key={index}>

@@ -86,3 +86,27 @@
   display: flex;
   align-items: center;
 }
+
+.category_field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.category_label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.category_select {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  transition: 0.2s ease;
+}
+
+.category_select:focus {
+  border-color: #4f46e5;
+  outline: none;
+}
