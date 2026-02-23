@@ -23,17 +23,17 @@ function Header({ isAdmin, userEmail, onLogout, onOpenLogin }: HeaderProps) {
           <nav className="main-nav" aria-label="Main navigation">
             <ul className="nav-list">
               <li>
-                <a href="#/add">Add</a>
+                <a href="#/add">Contribute</a>
               </li>
               <li>
-                <a href="#branding">Branding</a>
+                <a href="#/dashboard">Dashboard</a>
               </li>
               <li>
-                <a href="#capsule">Capsule</a>
+                <a href="#/questions">Questions</a>
               </li>
               {isAdmin && (
                 <li>
-                  <a href="#admin">Admin</a>
+                  <a href="#/results">Results</a>
                 </li>
               )}
             </ul>
