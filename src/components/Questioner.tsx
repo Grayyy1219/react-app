@@ -31,7 +31,7 @@ type FirebaseQuestion = {
   hint?: string;
 };
 
-const SESSION_KEY = "react-app-user-session";
+const SESSION_KEY = "cse-reviewer-user-session";
 
 type QuestionStat = {
   correct: number;
@@ -69,7 +69,8 @@ const normalizeQuestions = (
     .map(([id, value]) => {
       const options = value.options;
       const correctIndex = value.correctIndex;
-      const hasValidOptions = Array.isArray(options) && options.length > 0 && options.every(Boolean);
+      const hasValidOptions =
+        Array.isArray(options) && options.length > 0 && options.every(Boolean);
       const hasValidCorrectIndex =
         typeof correctIndex === "number" &&
         correctIndex >= 0 &&
@@ -98,7 +99,10 @@ const getQuestionWeight = (
   generalStatsByQuestion: Record<string, QuestionStat>,
 ) => {
   const userStats = userStatsByQuestion[questionId] ?? { correct: 0, wrong: 0 };
-  const generalStats = generalStatsByQuestion[questionId] ?? { correct: 0, wrong: 0 };
+  const generalStats = generalStatsByQuestion[questionId] ?? {
+    correct: 0,
+    wrong: 0,
+  };
 
   const weightedCorrect = userStats.correct + generalStats.correct * 0.35;
   const weightedWrong = userStats.wrong + generalStats.wrong * 0.35;
@@ -127,7 +131,11 @@ const getWeightedRandomQuestion = (
 
   const weightedPool = pool.map((question) => ({
     question,
-    weight: getQuestionWeight(question.id, userStatsByQuestion, generalStatsByQuestion),
+    weight: getQuestionWeight(
+      question.id,
+      userStatsByQuestion,
+      generalStatsByQuestion,
+    ),
   }));
 
   const totalWeight = weightedPool.reduce((sum, item) => sum + item.weight, 0);
@@ -149,13 +157,18 @@ type QuestionerProps = {
 
 const Questioner = ({ isAdmin = false }: QuestionerProps) => {
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
-  const [activeFilter, setActiveFilter] = useState<QuestionFilter>(ALL_CATEGORIES);
-  const [currentQuestion, setCurrentQuestion] = useState<QuestionItem | null>(null);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [userStatsByQuestion, setUserStatsByQuestion] = useState<Record<string, QuestionStat>>({});
-  const [generalStatsByQuestion, setGeneralStatsByQuestion] = useState<Record<string, QuestionStat>>(
-    {},
+  const [activeFilter, setActiveFilter] =
+    useState<QuestionFilter>(ALL_CATEGORIES);
+  const [currentQuestion, setCurrentQuestion] = useState<QuestionItem | null>(
+    null,
   );
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [userStatsByQuestion, setUserStatsByQuestion] = useState<
+    Record<string, QuestionStat>
+  >({});
+  const [generalStatsByQuestion, setGeneralStatsByQuestion] = useState<
+    Record<string, QuestionStat>
+  >({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showNote, setShowNote] = useState(false);
@@ -163,7 +176,9 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
   const [noteDraft, setNoteDraft] = useState("");
 
   const currentUserKey = getCurrentUserKey();
-  const noteStorageKey = currentUserKey ? `question-notes-${currentUserKey}` : null;
+  const noteStorageKey = currentUserKey
+    ? `question-notes-${currentUserKey}`
+    : null;
 
   useEffect(() => {
     if (!noteStorageKey) {
@@ -187,7 +202,7 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
 
   useEffect(() => {
     setShowNote(false);
-    setNoteDraft(currentQuestion ? userNotes[currentQuestion.id] ?? "" : "");
+    setNoteDraft(currentQuestion ? (userNotes[currentQuestion.id] ?? "") : "");
   }, [currentQuestion, userNotes]);
 
   useEffect(() => {
@@ -199,13 +214,18 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
         const userKey = getCurrentUserKey();
 
         const questionRequests = QUESTION_CATEGORIES.map(async (category) => {
-          const response = await fetch(`${FIREBASE_DB_URL}/questions/${CATEGORY_KEYS[category]}.json`);
+          const response = await fetch(
+            `${FIREBASE_DB_URL}/questions/${CATEGORY_KEYS[category]}.json`,
+          );
 
           if (!response.ok) {
             throw new Error(`Failed to fetch ${category}`);
           }
 
-          const data = (await response.json()) as Record<string, FirebaseQuestion> | null;
+          const data = (await response.json()) as Record<
+            string,
+            FirebaseQuestion
+          > | null;
           return normalizeQuestions(category, data);
         });
 
@@ -244,7 +264,12 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
     excludedQuestionId?: string,
   ) => {
     setCurrentQuestion(
-      getWeightedRandomQuestion(pool, userStatsMap, generalStatsMap, excludedQuestionId),
+      getWeightedRandomQuestion(
+        pool,
+        userStatsMap,
+        generalStatsMap,
+        excludedQuestionId,
+      ),
     );
     setSelectedIndex(null);
   };
@@ -254,7 +279,11 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
       return;
     }
 
-    moveToNextQuestion(filteredQuestions, userStatsByQuestion, generalStatsByQuestion);
+    moveToNextQuestion(
+      filteredQuestions,
+      userStatsByQuestion,
+      generalStatsByQuestion,
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filteredQuestions, selectedIndex]);
 
@@ -266,7 +295,12 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
         ? questions
         : questions.filter((question) => question.category === filter);
 
-    moveToNextQuestion(pool, userStatsByQuestion, generalStatsByQuestion, currentQuestion?.id);
+    moveToNextQuestion(
+      pool,
+      userStatsByQuestion,
+      generalStatsByQuestion,
+      currentQuestion?.id,
+    );
   };
 
   const handleAnswerSelect = (index: number) => {
@@ -278,7 +312,10 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
 
     const answeredCorrectly = index === currentQuestion.correctIndex;
     const userKey = getCurrentUserKey();
-    const currentGeneral = generalStatsByQuestion[currentQuestion.id] ?? { correct: 0, wrong: 0 };
+    const currentGeneral = generalStatsByQuestion[currentQuestion.id] ?? {
+      correct: 0,
+      wrong: 0,
+    };
     const nextGeneral = answeredCorrectly
       ? { ...currentGeneral, correct: currentGeneral.correct + 1 }
       : { ...currentGeneral, wrong: currentGeneral.wrong + 1 };
@@ -291,7 +328,10 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
     }));
 
     setUserStatsByQuestion((previous) => {
-      const currentStat = previous[currentQuestion.id] ?? { correct: 0, wrong: 0 };
+      const currentStat = previous[currentQuestion.id] ?? {
+        correct: 0,
+        wrong: 0,
+      };
       const nextStat = answeredCorrectly
         ? { ...currentStat, correct: currentStat.correct + 1 }
         : { ...currentStat, wrong: currentStat.wrong + 1 };
@@ -333,7 +373,9 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
 
   const isAnswered = selectedIndex !== null && currentQuestion !== null;
   const isCorrectSelection =
-    isAnswered && selectedIndex !== null && selectedIndex === currentQuestion.correctIndex;
+    isAnswered &&
+    selectedIndex !== null &&
+    selectedIndex === currentQuestion.correctIndex;
 
   const getChoiceClassName = (index: number) => {
     if (!isAnswered || !currentQuestion) {
@@ -352,15 +394,20 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
   };
 
   const adminCurrentStats = currentQuestion
-    ? generalStatsByQuestion[currentQuestion.id] ?? { correct: 0, wrong: 0 }
+    ? (generalStatsByQuestion[currentQuestion.id] ?? { correct: 0, wrong: 0 })
     : null;
 
   const shouldShowNoteActions =
-    Boolean(currentQuestion?.hint) || Boolean(currentQuestion && currentUserKey);
+    Boolean(currentQuestion?.hint) ||
+    Boolean(currentQuestion && currentUserKey);
 
   return (
     <div className="quiz-container">
-      <div className="category-bar" role="group" aria-label="Question categories">
+      <div
+        className="category-bar"
+        role="group"
+        aria-label="Question categories"
+      >
         <button
           className={`category-btn ${activeFilter === ALL_CATEGORIES ? "active" : ""}`}
           onClick={() => showAnotherQuestion(ALL_CATEGORIES)}
@@ -381,19 +428,30 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
       <div className="question-box">
         {isLoading && "Loading question..."}
         {!isLoading && error && error}
-        {!isLoading && !error && !currentQuestion && "No questions found for this category."}
+        {!isLoading &&
+          !error &&
+          !currentQuestion &&
+          "No questions found for this category."}
         {!isLoading && !error && currentQuestion && currentQuestion.question}
       </div>
 
       {shouldShowNoteActions && currentQuestion && (
         <div className="question-note-wrap">
-          <button type="button" className="note-toggle-btn" onClick={() => setShowNote((prev) => !prev)}>
+          <button
+            type="button"
+            className="note-toggle-btn"
+            onClick={() => setShowNote((prev) => !prev)}
+          >
             {showNote ? "Hide note" : "Show note"}
           </button>
 
           {showNote && (
             <div className="question-note-card">
-              {currentQuestion.hint && <p><strong>Tip:</strong> {currentQuestion.hint}</p>}
+              {currentQuestion.hint && (
+                <p>
+                  <strong>Tip:</strong> {currentQuestion.hint}
+                </p>
+              )}
               {currentUserKey && (
                 <>
                   <label htmlFor="own-note-input">Your note</label>
@@ -403,7 +461,11 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
                     onChange={(event) => setNoteDraft(event.target.value)}
                     placeholder="Write your own note for this question..."
                   />
-                  <button type="button" className="save-note-btn" onClick={saveOwnNote}>
+                  <button
+                    type="button"
+                    className="save-note-btn"
+                    onClick={saveOwnNote}
+                  >
                     Save note
                   </button>
                 </>
@@ -421,7 +483,9 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
       )}
 
       {isAnswered && currentQuestion && (
-        <div className={`answer-feedback ${isCorrectSelection ? "success" : "error"}`}>
+        <div
+          className={`answer-feedback ${isCorrectSelection ? "success" : "error"}`}
+        >
           {isCorrectSelection
             ? "✅ Correct answer! Showing less of this question over time."
             : `❌ Wrong answer. Correct answer: ${currentQuestion.options[currentQuestion.correctIndex]}. You'll see this more often for practice.`}
@@ -443,7 +507,11 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
       </div>
 
       {isAnswered && (
-        <button type="button" className="next-question-btn" onClick={handleNextQuestion}>
+        <button
+          type="button"
+          className="next-question-btn"
+          onClick={handleNextQuestion}
+        >
           Next Question
         </button>
       )}

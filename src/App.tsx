@@ -13,7 +13,7 @@ type UserSession = {
   email: string;
 };
 
-const SESSION_KEY = "react-app-user-session";
+const SESSION_KEY = "cse-reviewer-user-session";
 
 const getStoredSession = (): UserSession | null => {
   const rawSession = sessionStorage.getItem(SESSION_KEY);
@@ -44,8 +44,12 @@ const pageFromHash = (hashValue: string): PageName => {
 };
 
 function App() {
-  const [userRole, setUserRole] = useState<UserRole | null>(() => getStoredSession()?.role ?? null);
-  const [userEmail, setUserEmail] = useState<string | null>(() => getStoredSession()?.email ?? null);
+  const [userRole, setUserRole] = useState<UserRole | null>(
+    () => getStoredSession()?.role ?? null,
+  );
+  const [userEmail, setUserEmail] = useState<string | null>(
+    () => getStoredSession()?.email ?? null,
+  );
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState<PageName>(
     pageFromHash(window.location.hash),
