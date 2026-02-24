@@ -21,12 +21,14 @@ type QuestionItem = {
   category: QuestionCategory;
   options: string[];
   correctIndex: number;
+  hint?: string;
 };
 
 type FirebaseQuestion = {
   question?: string;
   options?: string[];
   correctIndex?: number;
+  hint?: string;
 };
 
 const SESSION_KEY = "react-app-user-session";
@@ -36,7 +38,7 @@ type QuestionStat = {
   wrong: number;
 };
 
-const getCurrentUserKey = () => {
+const getCurrentSession = () => {
   const rawSession = sessionStorage.getItem(SESSION_KEY);
 
   if (!rawSession) {
@@ -44,11 +46,15 @@ const getCurrentUserKey = () => {
   }
 
   try {
-    const parsed = JSON.parse(rawSession) as { email?: string };
-    return parsed.email ? toUserKey(parsed.email) : null;
+    return JSON.parse(rawSession) as { email?: string };
   } catch {
     return null;
   }
+};
+
+const getCurrentUserKey = () => {
+  const session = getCurrentSession();
+  return session?.email ? toUserKey(session.email) : null;
 };
 
 const normalizeQuestions = (
@@ -80,6 +86,7 @@ const normalizeQuestions = (
         category,
         options,
         correctIndex,
+        ...(value.hint?.trim() ? { hint: value.hint.trim() } : {}),
       } satisfies QuestionItem;
     })
     .filter((item): item is QuestionItem => item !== null);
@@ -151,6 +158,37 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
   );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showNote, setShowNote] = useState(false);
+  const [userNotes, setUserNotes] = useState<Record<string, string>>({});
+  const [noteDraft, setNoteDraft] = useState("");
+
+  const currentUserKey = getCurrentUserKey();
+  const noteStorageKey = currentUserKey ? `question-notes-${currentUserKey}` : null;
+
+  useEffect(() => {
+    if (!noteStorageKey) {
+      setUserNotes({});
+      return;
+    }
+
+    const savedNotes = localStorage.getItem(noteStorageKey);
+
+    if (!savedNotes) {
+      setUserNotes({});
+      return;
+    }
+
+    try {
+      setUserNotes(JSON.parse(savedNotes) as Record<string, string>);
+    } catch {
+      setUserNotes({});
+    }
+  }, [noteStorageKey]);
+
+  useEffect(() => {
+    setShowNote(false);
+    setNoteDraft(currentQuestion ? userNotes[currentQuestion.id] ?? "" : "");
+  }, [currentQuestion, userNotes]);
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -190,7 +228,6 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
 
     void fetchQuestions();
   }, []);
-
 
   const filteredQuestions = useMemo(() => {
     if (activeFilter === ALL_CATEGORIES) {
@@ -263,6 +300,24 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
     });
   };
 
+  const saveOwnNote = () => {
+    if (!currentQuestion || !noteStorageKey) {
+      return;
+    }
+
+    const trimmed = noteDraft.trim();
+    const nextNotes = { ...userNotes };
+
+    if (trimmed) {
+      nextNotes[currentQuestion.id] = trimmed;
+    } else {
+      delete nextNotes[currentQuestion.id];
+    }
+
+    localStorage.setItem(noteStorageKey, JSON.stringify(nextNotes));
+    setUserNotes(nextNotes);
+  };
+
   const handleNextQuestion = () => {
     if (!currentQuestion) {
       return;
@@ -300,6 +355,9 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
     ? generalStatsByQuestion[currentQuestion.id] ?? { correct: 0, wrong: 0 }
     : null;
 
+  const shouldShowNoteActions =
+    Boolean(currentQuestion?.hint) || Boolean(currentQuestion && currentUserKey);
+
   return (
     <div className="quiz-container">
       <div className="category-bar" role="group" aria-label="Question categories">
@@ -326,6 +384,34 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
         {!isLoading && !error && !currentQuestion && "No questions found for this category."}
         {!isLoading && !error && currentQuestion && currentQuestion.question}
       </div>
+
+      {shouldShowNoteActions && currentQuestion && (
+        <div className="question-note-wrap">
+          <button type="button" className="note-toggle-btn" onClick={() => setShowNote((prev) => !prev)}>
+            {showNote ? "Hide note" : "Show note"}
+          </button>
+
+          {showNote && (
+            <div className="question-note-card">
+              {currentQuestion.hint && <p><strong>Tip:</strong> {currentQuestion.hint}</p>}
+              {currentUserKey && (
+                <>
+                  <label htmlFor="own-note-input">Your note</label>
+                  <textarea
+                    id="own-note-input"
+                    value={noteDraft}
+                    onChange={(event) => setNoteDraft(event.target.value)}
+                    placeholder="Write your own note for this question..."
+                  />
+                  <button type="button" className="save-note-btn" onClick={saveOwnNote}>
+                    Save note
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {isAdmin && adminCurrentStats && (
         <div className="admin-question-stats" aria-label="Question stats">

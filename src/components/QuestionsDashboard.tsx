@@ -14,6 +14,7 @@ type FirebaseQuestion = {
   options?: string[];
   correctIndex?: number;
   createdAt?: number;
+  hint?: string;
 };
 
 type BaseQuestion = {
@@ -23,6 +24,7 @@ type BaseQuestion = {
   options: string[];
   correctIndex: number;
   createdAt?: number;
+  hint?: string;
 };
 
 type QuestionRow = BaseQuestion & {
@@ -40,6 +42,7 @@ type QuestionEditorState = {
   options: string[];
   correctIndex: number;
   createdAt?: number;
+  hint?: string;
 };
 
 type QuestionsDashboardProps = {
@@ -76,6 +79,7 @@ const normalizeQuestions = (
       options: options.map((option) => option.trim()),
       correctIndex,
       ...(typeof value.createdAt === "number" ? { createdAt: value.createdAt } : {}),
+      ...(value.hint?.trim() ? { hint: value.hint.trim() } : {}),
     });
 
     return result;
@@ -160,6 +164,7 @@ const QuestionsDashboard = ({ isAdmin = false }: QuestionsDashboardProps) => {
       options: [...question.options],
       correctIndex: question.correctIndex,
       createdAt: question.createdAt,
+      hint: question.hint ?? "",
     });
   };
 
@@ -201,6 +206,7 @@ const QuestionsDashboard = ({ isAdmin = false }: QuestionsDashboardProps) => {
         correctIndex: editor.correctIndex,
         createdAt: editor.createdAt ?? Date.now(),
         updatedAt: Date.now(),
+        hint: editor.hint?.trim() ?? "",
       };
 
       const targetPath = `${FIREBASE_DB_URL}/questions/${CATEGORY_KEYS[editor.category]}/${editor.id}.json`;
@@ -323,6 +329,15 @@ const QuestionsDashboard = ({ isAdmin = false }: QuestionsDashboardProps) => {
                 type="text"
                 value={editor.question}
                 onChange={(event) => setEditor({ ...editor, question: event.target.value })}
+              />
+            </label>
+
+            <label>
+              Hint / note
+              <input
+                type="text"
+                value={editor.hint ?? ""}
+                onChange={(event) => setEditor({ ...editor, hint: event.target.value })}
               />
             </label>
 

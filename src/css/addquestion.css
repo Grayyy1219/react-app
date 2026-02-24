@@ -40,6 +40,14 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.option_row_selected {
+  border: 2px solid #16a34a;
+  background: #f0fdf4;
 }
 
 .correct_checkbox {
@@ -60,6 +68,26 @@
 .option_input:focus {
   border-color: #4f46e5;
   outline: none;
+}
+
+.option_add_btn,
+.option_remove_btn {
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.option_add_btn {
+  padding: 10px;
+  background: #dcfce7;
+  color: #166534;
+}
+
+.option_remove_btn {
+  padding: 8px 10px;
+  background: #fee2e2;
+  color: #b91c1c;
 }
 
 .a_q_btn {

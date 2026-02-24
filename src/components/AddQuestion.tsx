@@ -9,8 +9,9 @@ import {
 
 function AddQuestion() {
   const [question, setQuestion] = useState("");
+  const [hint, setHint] = useState("");
   const [category, setCategory] = useState<QuestionCategory>("General Information");
-  const [options, setOptions] = useState<string[]>(["", "", "", ""]);
+  const [options, setOptions] = useState<string[]>(["", ""]);
   const [correctIndex, setCorrectIndex] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -24,15 +25,41 @@ function AddQuestion() {
     setCorrectIndex(index);
   };
 
+  const addOption = () => {
+    setOptions((previous) => [...previous, ""]);
+  };
+
+  const removeOption = (index: number) => {
+    setOptions((previous) => previous.filter((_, optionIndex) => optionIndex !== index));
+    setCorrectIndex((previous) => {
+      if (previous === null) {
+        return previous;
+      }
+
+      if (previous === index) {
+        return null;
+      }
+
+      return previous > index ? previous - 1 : previous;
+    });
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!question.trim() || options.some((option) => !option.trim())) {
-      alert("Please fill in the question and all 4 options.");
+    const trimmedOptions = options.map((option) => option.trim());
+
+    if (!question.trim()) {
+      alert("Please fill in the question.");
       return;
     }
 
-    if (correctIndex === null) {
+    if (trimmedOptions.length === 0 || trimmedOptions.some((option) => !option)) {
+      alert("Please add at least one answer option.");
+      return;
+    }
+
+    if (correctIndex === null || !options[correctIndex]?.trim()) {
       alert("Please select the correct answer.");
       return;
     }
@@ -50,8 +77,9 @@ function AddQuestion() {
           body: JSON.stringify({
             question: question.trim(),
             category: selectedCategory,
-            options: options.map((option) => option.trim()),
+            options: trimmedOptions,
             correctIndex,
+            hint: hint.trim(),
             createdAt: Date.now(),
           }),
         },
@@ -62,8 +90,9 @@ function AddQuestion() {
       }
 
       setQuestion("");
+      setHint("");
       setCategory("General Information");
-      setOptions(["", "", "", ""]);
+      setOptions(["", ""]);
       setCorrectIndex(null);
       alert("Question added to Firebase.");
     } catch (error) {
@@ -86,6 +115,13 @@ function AddQuestion() {
           placeholder="Enter your question..."
           required
         />
+        <input
+          type="text"
+          className="question_input"
+          value={hint}
+          onChange={(event) => setHint(event.target.value)}
+          placeholder="Optional hint / note for this question"
+        />
         <div className="category_field">
           <label htmlFor="question-category" className="category_label">
             Category
@@ -105,7 +141,7 @@ function AddQuestion() {
         </div>
         <div className="options_container">
           {options.map((option, index) => (
-            <div className="option_row" key={index}>
+            <div className={`option_row ${correctIndex === index ? "option_row_selected" : ""}`} key={index}>
               <input
                 type="checkbox"
                 checked={correctIndex === index}
@@ -120,9 +156,21 @@ function AddQuestion() {
                 required
                 className="option_input"
               />
+              {options.length > 1 && (
+                <button
+                  type="button"
+                  className="option_remove_btn"
+                  onClick={() => removeOption(index)}
+                >
+                  Remove
+                </button>
+              )}
             </div>
           ))}
         </div>
+        <button type="button" className="option_add_btn" onClick={addOption}>
+          + Add answer option
+        </button>
         <button type="submit" className="a_q_btn" disabled={isSaving}>
           {isSaving ? "Saving..." : "Add Question"}
         </button>
