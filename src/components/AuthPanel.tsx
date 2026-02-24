@@ -66,37 +66,61 @@ function AuthPanel({ isOpen, onClose, onLogin }: AuthPanelProps) {
     }
   };
 
+  const isLoginMode = mode === "login";
+
   return (
     <div className="auth-modal-backdrop" onClick={onClose}>
       <section className="auth-panel" onClick={(event) => event.stopPropagation()}>
         <div className="auth-header-row">
-          <h2>{mode === "login" ? "Login" : "Create account"}</h2>
+          <div>
+            <p className="auth-subtitle">Welcome</p>
+            <h2>{isLoginMode ? "Sign in to your account" : "Create your account"}</h2>
+          </div>
           <button className="close-btn" onClick={onClose} aria-label="Close login modal">
             ✕
           </button>
         </div>
 
+        {isLoginMode && (
+          <p className="auth-notice">
+            You are currently browsing as a guest. Please log in to save your progress and access your
+            personalized workspace.
+          </p>
+        )}
+
         <form className="auth-form" onSubmit={handleSubmit}>
+          <label className="auth-field-label" htmlFor="auth-email">
+            Email address
+          </label>
           <input
+            id="auth-email"
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="Email"
+            placeholder="you@example.com"
             required
           />
 
+          <label className="auth-field-label" htmlFor="auth-password">
+            Password
+          </label>
           <input
+            id="auth-password"
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            placeholder="Password"
+            placeholder="Enter your password"
             required
           />
 
-          {mode === "register" && (
-            <label className="role-picker">
+          {!isLoginMode && (
+            <label className="role-picker" htmlFor="auth-role">
               Role
-              <select value={role} onChange={(event) => setRole(event.target.value as UserRole)}>
+              <select
+                id="auth-role"
+                value={role}
+                onChange={(event) => setRole(event.target.value as UserRole)}
+              >
                 <option value="regular">Regular user</option>
                 <option value="admin">Admin</option>
               </select>
@@ -104,15 +128,12 @@ function AuthPanel({ isOpen, onClose, onLogin }: AuthPanelProps) {
           )}
 
           <button type="submit" disabled={isSaving}>
-            {isSaving ? "Saving..." : mode === "login" ? "Login" : "Register"}
+            {isSaving ? "Saving..." : isLoginMode ? "Sign in" : "Create account"}
           </button>
         </form>
 
-        <button
-          className="toggle-auth-mode"
-          onClick={() => setMode(mode === "login" ? "register" : "login")}
-        >
-          {mode === "login" ? "Need an account? Register" : "Already have an account? Login"}
+        <button className="toggle-auth-mode" onClick={() => setMode(isLoginMode ? "register" : "login")}>
+          {isLoginMode ? "Need an account? Create one" : "Already have an account? Sign in"}
         </button>
       </section>
     </div>

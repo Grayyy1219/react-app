@@ -65,3 +65,17 @@ nav.main-nav ul {
   font-size: 12px;
   color: #c4b5fd;
 }
+
+
+.btn-login:hover {
+  background: rgba(139, 92, 246, 0.15);
+}
+
+.guest-notice {
+  font-size: 12px;
+  color: #d3ddfa;
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(139, 92, 246, 0.12);
+}

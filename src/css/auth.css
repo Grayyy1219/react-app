@@ -1,37 +1,76 @@
 .auth-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(5, 8, 16, 0.72);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 16px;
 }
 
 .auth-panel {
-  width: min(92vw, 380px);
-  padding: 20px;
-  border-radius: 12px;
-  background: rgba(20, 24, 36, 0.95);
+  width: min(92vw, 420px);
+  padding: 24px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(24, 30, 46, 0.96), rgba(18, 22, 34, 0.98));
+  border: 1px solid #313a53;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
   color: #e9ecf3;
 }
 
 .auth-header-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: 10px;
+}
+
+.auth-header-row h2 {
+  font-size: 1.2rem;
+  line-height: 1.35;
+}
+
+.auth-subtitle {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a8b4d5;
+  margin-bottom: 4px;
 }
 
 .close-btn {
   font-size: 14px;
   color: #c4b5fd;
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.auth-notice {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border: 1px solid #4d5f8c;
+  border-radius: 8px;
+  background: rgba(82, 114, 192, 0.15);
+  color: #d8e2ff;
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 12px;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.auth-field-label {
+  font-size: 13px;
+  color: #ccd5ee;
 }
 
 .auth-form input,
@@ -43,11 +82,30 @@
   font-size: 14px;
 }
 
+.auth-form input,
+.auth-form select {
+  background: rgba(255, 255, 255, 0.04);
+  color: #eef1fb;
+}
+
+.auth-form input:focus,
+.auth-form select:focus {
+  outline: 2px solid #8b5cf6;
+  border-color: transparent;
+}
+
 .auth-form button {
+  margin-top: 4px;
   background: #8b5cf6;
   border: none;
   color: #fff;
+  text-align: center;
   cursor: pointer;
+}
+
+.auth-form button:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
 }
 
 .role-picker {
@@ -55,12 +113,14 @@
   flex-direction: column;
   gap: 6px;
   font-size: 14px;
+  margin-top: 4px;
 }
 
 .toggle-auth-mode {
-  margin-top: 12px;
+  margin-top: 14px;
   color: #c4b5fd;
   background: none;
   border: none;
   cursor: pointer;
+  font-size: 13px;
 }

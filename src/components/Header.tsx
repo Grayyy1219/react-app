@@ -49,9 +49,12 @@ function Header({ isAdmin, userEmail, onLogout, onOpenLogin }: HeaderProps) {
               </button>
             </>
           ) : (
-            <button className="btn-login" onClick={onOpenLogin}>
-              Login
-            </button>
+            <>
+              <span className="guest-notice">Guest mode · not logged in</span>
+              <button className="btn-login" onClick={onOpenLogin}>
+                Login
+              </button>
+            </>
           )}
         </div>
       </div>
