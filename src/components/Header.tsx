@@ -23,10 +23,10 @@ function Header({ isAdmin, userEmail, onLogout, onOpenLogin }: HeaderProps) {
           <nav className="main-nav" aria-label="Main navigation">
             <ul className="nav-list">
               <li>
-                <a href="#/add">Contribute</a>
+                <a href="#/home">Home</a>
               </li>
               <li>
-                <a href="#/dashboard">Dashboard</a>
+                <a href="#/add">Contribute</a>
               </li>
               <li>
                 <a href="#/questions">Questions</a>

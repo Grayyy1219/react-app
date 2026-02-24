@@ -141,18 +141,41 @@
   font-weight: 600;
 }
 
-.editor-modal input[type="text"],
-.editor-modal select {
+.editor-modal .question_input,
+.editor-modal .option_input,
+.editor-modal .category_select {
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   padding: 10px;
+  font-size: 14px;
+}
+
+.editor-modal .question_input {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.editor-modal .question_input:focus,
+.editor-modal .option_input:focus,
+.editor-modal .category_select:focus {
+  border-color: #4f46e5;
+  outline: none;
 }
 
 .editor-option-row {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 8px;
+}
+
+.editor-modal .option_remove_btn {
+  padding: 8px 10px;
+}
+
+.editor-modal .option_add_btn {
+  align-self: flex-start;
+  padding: 10px 12px;
 }
 
 .editor-options {

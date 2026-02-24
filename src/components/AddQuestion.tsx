@@ -107,20 +107,20 @@ function AddQuestion() {
     <div className="questioner_div">
       <form onSubmit={handleSubmit} className="a_q_form">
         <h2>Add Question</h2>
-        <input
-          type="text"
+        <textarea
           className="question_input"
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
           placeholder="Enter your question..."
+          rows={3}
           required
         />
-        <input
-          type="text"
+        <textarea
           className="question_input"
           value={hint}
           onChange={(event) => setHint(event.target.value)}
           placeholder="Optional hint / note for this question"
+          rows={3}
         />
         <div className="category_field">
           <label htmlFor="question-category" className="category_label">

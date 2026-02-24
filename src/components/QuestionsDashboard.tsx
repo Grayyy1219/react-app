@@ -178,6 +178,31 @@ const QuestionsDashboard = ({ isAdmin = false }: QuestionsDashboardProps) => {
     setEditor({ ...editor, options: nextOptions });
   };
 
+  const addEditorOption = () => {
+    if (!editor) {
+      return;
+    }
+
+    setEditor({ ...editor, options: [...editor.options, ""] });
+  };
+
+  const removeEditorOption = (index: number) => {
+    if (!editor || editor.options.length <= 1) {
+      return;
+    }
+
+    const nextOptions = editor.options.filter((_, optionIndex) => optionIndex !== index);
+    let nextCorrectIndex = editor.correctIndex;
+
+    if (editor.correctIndex === index) {
+      nextCorrectIndex = 0;
+    } else if (editor.correctIndex > index) {
+      nextCorrectIndex = editor.correctIndex - 1;
+    }
+
+    setEditor({ ...editor, options: nextOptions, correctIndex: nextCorrectIndex });
+  };
+
   const handleSaveQuestion = async () => {
     if (!editor || !isAdmin) {
       return;
@@ -325,25 +350,28 @@ const QuestionsDashboard = ({ isAdmin = false }: QuestionsDashboardProps) => {
             <h2>Edit Question</h2>
             <label>
               Question
-              <input
-                type="text"
+              <textarea
+                className="question_input"
                 value={editor.question}
                 onChange={(event) => setEditor({ ...editor, question: event.target.value })}
+                rows={3}
               />
             </label>
 
             <label>
               Hint / note
-              <input
-                type="text"
+              <textarea
+                className="question_input"
                 value={editor.hint ?? ""}
                 onChange={(event) => setEditor({ ...editor, hint: event.target.value })}
+                rows={3}
               />
             </label>
 
-            <label>
+            <label className="category_field">
               Category
               <select
+                className="category_select"
                 value={editor.category}
                 onChange={(event) =>
                   setEditor({ ...editor, category: event.target.value as QuestionCategory })
@@ -361,9 +389,10 @@ const QuestionsDashboard = ({ isAdmin = false }: QuestionsDashboardProps) => {
               {editor.options.map((option, index) => (
                 <label key={`${editor.id}-${index}`}>
                   Option {index + 1}
-                  <div className="editor-option-row">
+                  <div className={`editor-option-row option_row ${editor.correctIndex === index ? "option_row_selected" : ""}`}>
                     <input
                       type="radio"
+                      className="correct_checkbox"
                       name="correctAnswer"
                       checked={editor.correctIndex === index}
                       onChange={() => setEditor({ ...editor, correctIndex: index })}
@@ -371,12 +400,25 @@ const QuestionsDashboard = ({ isAdmin = false }: QuestionsDashboardProps) => {
                     />
                     <input
                       type="text"
+                      className="option_input"
                       value={option}
                       onChange={(event) => updateEditorOption(index, event.target.value)}
                     />
+                    {editor.options.length > 1 && (
+                      <button
+                        type="button"
+                        className="option_remove_btn"
+                        onClick={() => removeEditorOption(index)}
+                      >
+                        Remove
+                      </button>
+                    )}
                   </div>
                 </label>
               ))}
+              <button type="button" className="option_add_btn" onClick={addEditorOption}>
+                + Add answer option
+              </button>
             </div>
 
             <div className="editor-actions">

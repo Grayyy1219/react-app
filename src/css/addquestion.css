@@ -25,6 +25,16 @@
   transition: 0.2s ease;
 }
 
+.question_input[type="text"],
+textarea.question_input {
+  font-family: Arial, sans-serif;
+}
+
+textarea.question_input {
+  min-height: 96px;
+  resize: vertical;
+}
+
 .question_input:focus {
   border-color: #8b5cf6;
   outline: none;
