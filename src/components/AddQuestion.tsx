@@ -7,7 +7,11 @@ import {
   type QuestionCategory,
 } from "../constants/questions";
 
-function AddQuestion() {
+type AddQuestionProps = {
+  isAdmin: boolean;
+};
+
+function AddQuestion({ isAdmin }: AddQuestionProps) {
   const [question, setQuestion] = useState("");
   const [hint, setHint] = useState("");
   const [category, setCategory] = useState<QuestionCategory>("General Information");
@@ -69,21 +73,22 @@ function AddQuestion() {
     const selectedCategory = category || "General Information";
 
     try {
-      const response = await fetch(
-        `${FIREBASE_DB_URL}/questions/${CATEGORY_KEYS[selectedCategory]}.json`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            question: question.trim(),
-            category: selectedCategory,
-            options: trimmedOptions,
-            correctIndex,
-            hint: hint.trim(),
-            createdAt: Date.now(),
-          }),
-        },
-      );
+      const resourcePath = isAdmin
+        ? `questions/${CATEGORY_KEYS[selectedCategory]}`
+        : `pendingQuestions/${CATEGORY_KEYS[selectedCategory]}`;
+      const response = await fetch(`${FIREBASE_DB_URL}/${resourcePath}.json`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question: question.trim(),
+          category: selectedCategory,
+          options: trimmedOptions,
+          correctIndex,
+          hint: hint.trim(),
+          status: isAdmin ? "approved" : "pending",
+          createdAt: Date.now(),
+        }),
+      });
 
       if (!response.ok) {
         throw new Error("Firebase request failed");
@@ -94,7 +99,11 @@ function AddQuestion() {
       setCategory("General Information");
       setOptions(["", ""]);
       setCorrectIndex(null);
-      alert("Question added to Firebase.");
+      alert(
+        isAdmin
+          ? "Question added to Firebase."
+          : "Question submitted successfully. It will appear after admin approval.",
+      );
     } catch (error) {
       console.error("Error adding question:", error);
       alert("Failed to add question.");
@@ -107,6 +116,11 @@ function AddQuestion() {
     <div className="questioner_div">
       <form onSubmit={handleSubmit} className="a_q_form">
         <h2>Add Question</h2>
+        <p className="submission_notice">
+          {isAdmin
+            ? "Admin mode: your submission is published immediately."
+            : "Contributor mode: submitted questions require admin approval before publishing."}
+        </p>
         <textarea
           className="question_input"
           value={question}

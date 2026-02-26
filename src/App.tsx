@@ -4,9 +4,10 @@ import Header from "./components/Header";
 import AddQuestion from "./components/AddQuestion";
 import AuthPanel from "./components/AuthPanel";
 import QuestionsDashboard from "./components/QuestionsDashboard";
+import AdminConfig from "./components/AdminConfig";
 import type { UserRole } from "./firebase";
 
-type PageName = "home" | "add" | "questions";
+type PageName = "home" | "add" | "questions" | "config";
 
 type UserSession = {
   role: UserRole;
@@ -38,6 +39,10 @@ const pageFromHash = (hashValue: string): PageName => {
 
   if (hashValue === "#/questions") {
     return "questions";
+  }
+
+  if (hashValue === "#/config") {
+    return "config";
   }
 
   return "home";
@@ -84,11 +89,15 @@ function App() {
 
   const pageContent = useMemo(() => {
     if (currentPage === "add") {
-      return <AddQuestion />;
+      return <AddQuestion isAdmin={userRole === "admin"} />;
     }
 
     if (currentPage === "questions") {
       return <QuestionsDashboard isAdmin={userRole === "admin"} userEmail={userEmail} />;
+    }
+
+    if (currentPage === "config") {
+      return userRole === "admin" ? <AdminConfig /> : <Questioner isAdmin={false} />;
     }
 
     return <Questioner isAdmin={userRole === "admin"} />;
