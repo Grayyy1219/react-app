@@ -16,7 +16,7 @@ function Header({ isAdmin, userEmail, onLogout, onOpenLogin }: HeaderProps) {
           <img src={icon} width={24} alt="" />
           <a
             className="logo-btn"
-            href="/cse-reviewer"
+            href="/cse-reviewer/"
             aria-label="Go to homepage"
           >
             <b>Home</b>
