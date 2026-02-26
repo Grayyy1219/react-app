@@ -37,7 +37,7 @@ function Header({ isAdmin, userEmail, onLogout, onOpenLogin }: HeaderProps) {
               </li>
               {isAdmin && (
                 <li>
-                  <a href="#/results">Results</a>
+                  <a href="#/config">Config</a>
                 </li>
               )}
             </ul>
