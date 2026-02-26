@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import "../css/questions-dashboard.css";
 import {
   CATEGORY_KEYS,
@@ -6,7 +6,7 @@ import {
   QUESTION_CATEGORIES,
   type QuestionCategory,
 } from "../constants/questions";
-import { getGeneralQuestionStats } from "../firebase";
+import { getGeneralQuestionStats, getUserQuestionStats, toUserKey } from "../firebase";
 
 type FirebaseQuestion = {
   question?: string;
@@ -34,6 +34,14 @@ type QuestionRow = BaseQuestion & {
   score: number;
 };
 
+type QuestionStat = {
+  correct: number;
+  wrong: number;
+};
+
+type SortKey = "rank" | "question" | "category" | "wrong" | "correct" | "attempts";
+type SortDirection = "asc" | "desc";
+
 type QuestionEditorState = {
   id: string;
   originalCategory: QuestionCategory;
@@ -47,6 +55,7 @@ type QuestionEditorState = {
 
 type QuestionsDashboardProps = {
   isAdmin?: boolean;
+  userEmail?: string | null;
 };
 
 const normalizeQuestions = (
@@ -86,14 +95,23 @@ const normalizeQuestions = (
   }, []);
 };
 
-const QuestionsDashboard = ({ isAdmin = false }: QuestionsDashboardProps) => {
-  const [questions, setQuestions] = useState<QuestionRow[]>([]);
+const QuestionsDashboard = ({ isAdmin = false, userEmail = null }: QuestionsDashboardProps) => {
+  const [questions, setQuestions] = useState<BaseQuestion[]>([]);
+  const [generalStatsByQuestion, setGeneralStatsByQuestion] = useState<Record<string, QuestionStat>>({});
+  const [userStatsByQuestion, setUserStatsByQuestion] = useState<Record<string, QuestionStat>>({});
+  const [statsScope, setStatsScope] = useState<"global" | "mine">(() =>
+    userEmail ? "mine" : "global",
+  );
+  const [sortBy, setSortBy] = useState<SortKey>("rank");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editor, setEditor] = useState<QuestionEditorState | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const fetchDashboardData = async () => {
+  const hasLoggedInUser = Boolean(userEmail);
+
+  const fetchDashboardData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -109,42 +127,81 @@ const QuestionsDashboard = ({ isAdmin = false }: QuestionsDashboardProps) => {
         return normalizeQuestions(category, data);
       });
 
-      const [questionByCategory, statsByQuestion] = await Promise.all([
+      const [questionByCategory, globalStats] = await Promise.all([
         Promise.all(questionRequests),
         getGeneralQuestionStats(),
       ]);
 
-      const merged = questionByCategory
-        .flat()
-        .map((question) => {
-          const stats = statsByQuestion[question.id] ?? { correct: 0, wrong: 0 };
-          const attempts = stats.correct + stats.wrong;
+      const nextUserStats = hasLoggedInUser
+        ? await getUserQuestionStats(toUserKey(userEmail ?? ""))
+        : {};
 
-          return {
-            ...question,
-            correct: stats.correct,
-            wrong: stats.wrong,
-            attempts,
-            score: stats.wrong * 2 - stats.correct,
-          } satisfies QuestionRow;
-        })
-        .sort((a, b) => b.score - a.score || b.wrong - a.wrong || b.attempts - a.attempts);
-
-      setQuestions(merged);
+      setQuestions(questionByCategory.flat());
+      setGeneralStatsByQuestion(globalStats);
+      setUserStatsByQuestion(nextUserStats);
     } catch (loadError) {
       console.error("Failed to load dashboard data", loadError);
       setError("Unable to load questions dashboard right now.");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [hasLoggedInUser, userEmail]);
 
   useEffect(() => {
     void fetchDashboardData();
-  }, []);
+  }, [fetchDashboardData]);
+
+  useEffect(() => {
+    setStatsScope(hasLoggedInUser ? "mine" : "global");
+  }, [hasLoggedInUser]);
+
+  const activeStatsByQuestion = statsScope === "mine" ? userStatsByQuestion : generalStatsByQuestion;
+
+  const questionRows = useMemo(() => {
+    return questions
+      .map((question) => {
+        const stats = activeStatsByQuestion[question.id] ?? { correct: 0, wrong: 0 };
+        const attempts = stats.correct + stats.wrong;
+
+        return {
+          ...question,
+          correct: stats.correct,
+          wrong: stats.wrong,
+          attempts,
+          score: stats.wrong * 2 - stats.correct,
+        } satisfies QuestionRow;
+      });
+  }, [activeStatsByQuestion, questions]);
+
+  const sortedQuestionRows = useMemo(() => {
+    const rows = [...questionRows];
+    const rankingComparator = (a: QuestionRow, b: QuestionRow) =>
+      b.score - a.score || b.wrong - a.wrong || b.attempts - a.attempts;
+
+    rows.sort((a, b) => {
+      if (sortBy === "rank") {
+        return sortDirection === "asc" ? -rankingComparator(a, b) : rankingComparator(a, b);
+      }
+
+      if (sortBy === "question") {
+        const result = a.question.localeCompare(b.question);
+        return sortDirection === "asc" ? result : -result;
+      }
+
+      if (sortBy === "category") {
+        const result = a.category.localeCompare(b.category);
+        return sortDirection === "asc" ? result : -result;
+      }
+
+      const numericResult = a[sortBy] - b[sortBy];
+      return sortDirection === "asc" ? numericResult : -numericResult;
+    });
+
+    return rows;
+  }, [questionRows, sortBy, sortDirection]);
 
   const totals = useMemo(() => {
-    return questions.reduce(
+    return sortedQuestionRows.reduce(
       (summary, question) => {
         summary.correct += question.correct;
         summary.wrong += question.wrong;
@@ -153,7 +210,25 @@ const QuestionsDashboard = ({ isAdmin = false }: QuestionsDashboardProps) => {
       },
       { correct: 0, wrong: 0, attempts: 0 },
     );
-  }, [questions]);
+  }, [sortedQuestionRows]);
+
+  const updateSort = (nextSortKey: SortKey) => {
+    if (sortBy === nextSortKey) {
+      setSortDirection((currentDirection) => (currentDirection === "asc" ? "desc" : "asc"));
+      return;
+    }
+
+    setSortBy(nextSortKey);
+    setSortDirection(nextSortKey === "question" || nextSortKey === "category" ? "asc" : "desc");
+  };
+
+  const sortLabel = (key: SortKey) => {
+    if (sortBy !== key) {
+      return "";
+    }
+
+    return sortDirection === "asc" ? " ↑" : " ↓";
+  };
 
   const openEditor = (question: QuestionRow) => {
     setEditor({
@@ -278,7 +353,7 @@ const QuestionsDashboard = ({ isAdmin = false }: QuestionsDashboardProps) => {
         <div className="questions-metrics-grid">
           <article className="metric-card">
             <h3>Total Questions</h3>
-            <strong>{questions.length}</strong>
+            <strong>{sortedQuestionRows.length}</strong>
           </article>
           <article className="metric-card">
             <h3>Total Correct</h3>
@@ -294,6 +369,25 @@ const QuestionsDashboard = ({ isAdmin = false }: QuestionsDashboardProps) => {
           </article>
         </div>
 
+        {hasLoggedInUser && (
+          <div className="stats-toggle" role="group" aria-label="Stats scope">
+            <button
+              type="button"
+              className={`stats-toggle-btn ${statsScope === "mine" ? "active" : ""}`}
+              onClick={() => setStatsScope("mine")}
+            >
+              My Stats
+            </button>
+            <button
+              type="button"
+              className={`stats-toggle-btn ${statsScope === "global" ? "active" : ""}`}
+              onClick={() => setStatsScope("global")}
+            >
+              Global Stats
+            </button>
+          </div>
+        )}
+
         <div className="dashboard-table-wrap">
           {isLoading && <p className="dashboard-state">Loading questions dashboard…</p>}
           {!isLoading && error && <p className="dashboard-state error">{error}</p>}
@@ -302,17 +396,41 @@ const QuestionsDashboard = ({ isAdmin = false }: QuestionsDashboardProps) => {
             <table className="questions-table">
               <thead>
                 <tr>
-                  <th>Rank</th>
-                  <th>Question</th>
-                  <th>Category</th>
-                  <th>Wrong</th>
-                  <th>Correct</th>
-                  <th>Attempts</th>
+                  <th>
+                    <button type="button" className="header-sort-btn" onClick={() => updateSort("rank")}>
+                      Rank{sortLabel("rank")}
+                    </button>
+                  </th>
+                  <th>
+                    <button type="button" className="header-sort-btn" onClick={() => updateSort("question")}>
+                      Question{sortLabel("question")}
+                    </button>
+                  </th>
+                  <th>
+                    <button type="button" className="header-sort-btn" onClick={() => updateSort("category")}>
+                      Category{sortLabel("category")}
+                    </button>
+                  </th>
+                  <th>
+                    <button type="button" className="header-sort-btn" onClick={() => updateSort("wrong")}>
+                      Wrong{sortLabel("wrong")}
+                    </button>
+                  </th>
+                  <th>
+                    <button type="button" className="header-sort-btn" onClick={() => updateSort("correct")}>
+                      Correct{sortLabel("correct")}
+                    </button>
+                  </th>
+                  <th>
+                    <button type="button" className="header-sort-btn" onClick={() => updateSort("attempts")}>
+                      Attempts{sortLabel("attempts")}
+                    </button>
+                  </th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {questions.map((question, index) => (
+                {sortedQuestionRows.map((question, index) => (
                   <tr key={`${question.category}-${question.id}`}>
                     <td>#{index + 1}</td>
                     <td className="question-cell">{question.question}</td>

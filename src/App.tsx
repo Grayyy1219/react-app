@@ -88,11 +88,11 @@ function App() {
     }
 
     if (currentPage === "questions") {
-      return <QuestionsDashboard isAdmin={userRole === "admin"} />;
+      return <QuestionsDashboard isAdmin={userRole === "admin"} userEmail={userEmail} />;
     }
 
     return <Questioner isAdmin={userRole === "admin"} />;
-  }, [currentPage, userRole]);
+  }, [currentPage, userEmail, userRole]);
 
   return (
     <>

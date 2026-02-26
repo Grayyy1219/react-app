@@ -45,6 +45,37 @@
   font-size: 1.7rem;
 }
 
+.stats-toggle {
+  display: inline-flex;
+  border: 1px solid rgba(167, 139, 250, 0.5);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.stats-toggle-btn {
+  border: 0;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.stats-toggle-btn + .stats-toggle-btn {
+  border-left: 1px solid rgba(167, 139, 250, 0.45);
+}
+
+.stats-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.stats-toggle-btn.active {
+  background: #ede9fe;
+  color: #4c1d95;
+}
+
 .dashboard-table-wrap {
   background: rgba(10, 14, 28, 0.7);
   border: 1px solid rgba(167, 139, 250, 0.4);
@@ -69,6 +100,21 @@
   color: #ddd6fe;
   font-size: 0.85rem;
   letter-spacing: 0.02em;
+}
+
+.header-sort-btn {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.header-sort-btn:hover {
+  color: #ffffff;
 }
 
 .questions-table tr:hover td {
