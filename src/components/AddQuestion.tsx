@@ -18,6 +18,30 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
   const [options, setOptions] = useState<string[]>(["", ""]);
   const [correctIndex, setCorrectIndex] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [submissionsOpen, setSubmissionsOpen] = useState(true);
+
+  React.useEffect(() => {
+    if (isAdmin) {
+      return;
+    }
+
+    const loadSettings = async () => {
+      try {
+        const response = await fetch(`${FIREBASE_DB_URL}/settings/common/submissionsOpen.json`);
+
+        if (!response.ok) {
+          throw new Error("Failed to load submissions setting");
+        }
+
+        const value = (await response.json()) as boolean | null;
+        setSubmissionsOpen(value ?? true);
+      } catch (error) {
+        console.error("Unable to load submissions setting", error);
+      }
+    };
+
+    void loadSettings();
+  }, [isAdmin]);
 
   const updateOption = (index: number, value: string) => {
     const next = [...options];
@@ -52,6 +76,11 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
     event.preventDefault();
 
     const trimmedOptions = options.map((option) => option.trim());
+
+    if (!isAdmin && !submissionsOpen) {
+      alert("Submissions are temporarily closed by admin.");
+      return;
+    }
 
     if (!question.trim()) {
       alert("Please fill in the question.");
@@ -119,7 +148,9 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
         <p className="submission_notice">
           {isAdmin
             ? "Admin mode: your submission is published immediately."
-            : "Contributor mode: submitted questions require admin approval before publishing."}
+            : submissionsOpen
+              ? "Contributor mode: submitted questions require admin approval before publishing."
+              : "Contributor mode: submissions are currently paused by admin."}
         </p>
         <textarea
           className="question_input"
@@ -185,7 +216,7 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
         <button type="button" className="option_add_btn" onClick={addOption}>
           + Add answer option
         </button>
-        <button type="submit" className="a_q_btn" disabled={isSaving}>
+        <button type="submit" className="a_q_btn" disabled={isSaving || (!isAdmin && !submissionsOpen)}>
           {isSaving ? "Saving..." : "Add Question"}
         </button>
       </form>
