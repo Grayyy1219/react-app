@@ -32,6 +32,7 @@ type QuestionRow = BaseQuestion & {
   wrong: number;
   attempts: number;
   score: number;
+  rank: number;
 };
 
 type QuestionStat = {
@@ -158,7 +159,7 @@ const QuestionsDashboard = ({ isAdmin = false, userEmail = null }: QuestionsDash
   const activeStatsByQuestion = statsScope === "mine" ? userStatsByQuestion : generalStatsByQuestion;
 
   const questionRows = useMemo(() => {
-    return questions
+    const rows = questions
       .map((question) => {
         const stats = activeStatsByQuestion[question.id] ?? { correct: 0, wrong: 0 };
         const attempts = stats.correct + stats.wrong;
@@ -169,14 +170,28 @@ const QuestionsDashboard = ({ isAdmin = false, userEmail = null }: QuestionsDash
           wrong: stats.wrong,
           attempts,
           score: stats.wrong * 2 - stats.correct,
+          rank: 0,
         } satisfies QuestionRow;
       });
+
+    const rankedRows = [...rows].sort(
+      (a, b) => b.score - a.score || b.wrong - a.wrong || b.attempts - a.attempts,
+    );
+
+    const rankByQuestionId = rankedRows.reduce<Record<string, number>>((result, row, index) => {
+      result[row.id] = index + 1;
+      return result;
+    }, {});
+
+    return rows.map((row) => ({
+      ...row,
+      rank: rankByQuestionId[row.id] ?? 0,
+    }));
   }, [activeStatsByQuestion, questions]);
 
   const sortedQuestionRows = useMemo(() => {
     const rows = [...questionRows];
-    const rankingComparator = (a: QuestionRow, b: QuestionRow) =>
-      b.score - a.score || b.wrong - a.wrong || b.attempts - a.attempts;
+    const rankingComparator = (a: QuestionRow, b: QuestionRow) => a.rank - b.rank;
 
     rows.sort((a, b) => {
       if (sortBy === "rank") {
@@ -346,7 +361,17 @@ const QuestionsDashboard = ({ isAdmin = false, userEmail = null }: QuestionsDash
     <section className="questions-dashboard-page">
       <div className="questions-dashboard-shell">
         <div className="questions-dashboard-header">
-          <h1>Questions Ranking Dashboard</h1>
+          <div className="questions-dashboard-title-row">
+            <h1>Questions Ranking Dashboard</h1>
+            <button
+              type="button"
+              className="rank-tooltip-trigger"
+              title="Rank is calculated by score (wrong × 2 − correct). Ties are broken by more wrong answers, then more attempts."
+              aria-label="How ranking works"
+            >
+              ?
+            </button>
+          </div>
           <p>Track question performance and maintain content quality from one place.</p>
         </div>
 
@@ -426,28 +451,29 @@ const QuestionsDashboard = ({ isAdmin = false, userEmail = null }: QuestionsDash
                       Attempts{sortLabel("attempts")}
                     </button>
                   </th>
-                  <th>Action</th>
+                  {isAdmin && <th>Action</th>}
                 </tr>
               </thead>
               <tbody>
-                {sortedQuestionRows.map((question, index) => (
+                {sortedQuestionRows.map((question) => (
                   <tr key={`${question.category}-${question.id}`}>
-                    <td>#{index + 1}</td>
+                    <td>#{question.rank}</td>
                     <td className="question-cell">{question.question}</td>
                     <td>{question.category}</td>
                     <td>{question.wrong}</td>
                     <td>{question.correct}</td>
                     <td>{question.attempts}</td>
-                    <td>
-                      <button
-                        type="button"
-                        className="table-action-btn"
-                        onClick={() => openEditor(question)}
-                        disabled={!isAdmin}
-                      >
-                        Edit
-                      </button>
-                    </td>
+                    {isAdmin && (
+                      <td>
+                        <button
+                          type="button"
+                          className="table-action-btn"
+                          onClick={() => openEditor(question)}
+                        >
+                          Edit
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

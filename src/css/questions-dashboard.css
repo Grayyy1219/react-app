@@ -10,6 +10,29 @@
   margin: 0 auto;
 }
 
+.questions-dashboard-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rank-tooltip-trigger {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid rgba(221, 214, 254, 0.8);
+  background: rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+  font-weight: 700;
+  line-height: 1;
+  cursor: help;
+  text-align: center;
+}
+
+.rank-tooltip-trigger:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .questions-dashboard-header h1 {
   font-size: clamp(1.8rem, 2vw, 2.4rem);
   margin-bottom: 8px;
