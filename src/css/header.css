@@ -13,6 +13,7 @@ button {
   all: unset;
   color: white;
   cursor: pointer;
+  box-sizing: border-box;
 }
 
 header {
@@ -23,13 +24,21 @@ header {
   width: 100%;
   top: 0;
   left: 0;
+  z-index: 30;
 }
 
 .container {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
   padding: 5px 10px;
+}
+
+.header-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 nav.main-nav ul {
@@ -49,6 +58,10 @@ nav.main-nav ul {
   font-size: 16px;
 }
 
+.mobile-menu-btn {
+  display: none;
+}
+
 .nav-actions {
   display: flex;
   align-items: center;
@@ -64,8 +77,11 @@ nav.main-nav ul {
 .user-pill {
   font-size: 12px;
   color: #c4b5fd;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-
 
 .btn-login:hover {
   background: rgba(139, 92, 246, 0.15);
@@ -78,4 +94,77 @@ nav.main-nav ul {
   padding: 4px 8px;
   border-radius: 999px;
   background: rgba(139, 92, 246, 0.12);
+}
+
+@media (max-width: 960px) {
+  header {
+    position: sticky;
+    padding: 10px 14px;
+  }
+
+  .container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .mobile-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid rgba(139, 92, 246, 0.7);
+    background: rgba(139, 92, 246, 0.2);
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .nav,
+  .nav-actions {
+    display: none;
+  }
+
+  .nav.menu-open,
+  .nav-actions.menu-open {
+    display: block;
+  }
+
+  nav.main-nav ul {
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid rgba(139, 92, 246, 0.35);
+    padding-top: 10px;
+  }
+
+  nav.main-nav a {
+    display: block;
+    font-size: 15px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .nav-actions.menu-open {
+    margin-top: 4px;
+    border-top: 1px solid rgba(139, 92, 246, 0.35);
+    padding-top: 10px;
+  }
+
+  .nav-actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .guest-notice,
+  .user-pill {
+    width: 100%;
+    max-width: none;
+    text-align: left;
+  }
+
+  .btn-login {
+    text-align: center;
+  }
 }

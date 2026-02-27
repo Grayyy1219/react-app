@@ -1,5 +1,6 @@
 import "../css/header.css";
 import icon from "../img/icon.png";
+import { useEffect, useState } from "react";
 
 type HeaderProps = {
   isAdmin: boolean;
@@ -9,21 +10,42 @@ type HeaderProps = {
 };
 
 function Header({ isAdmin, userEmail, onLogout, onOpenLogin }: HeaderProps) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const closeMenu = () => setIsMenuOpen(false);
+
+    window.addEventListener("hashchange", closeMenu);
+    return () => window.removeEventListener("hashchange", closeMenu);
+  }, []);
+
   return (
     <header className="site-header">
       <div className="container">
-        <div className="view-as">
-          <img src={icon} width={24} alt="" />
-          <a
-            className="logo-btn"
-            href="/cse-reviewer/"
-            aria-label="Go to homepage"
+        <div className="header-top-row">
+          <div className="view-as">
+            <img src={icon} width={24} alt="" />
+            <a
+              className="logo-btn"
+              href="/cse-reviewer/"
+              aria-label="Go to homepage"
+            >
+              <b>Home</b>
+            </a>
+          </div>
+
+          <button
+            className="mobile-menu-btn"
+            onClick={() => setIsMenuOpen((prev) => !prev)}
+            aria-label="Toggle navigation menu"
+            aria-expanded={isMenuOpen}
+            aria-controls="main-nav-panel"
           >
-            <b>Home</b>
-          </a>
+            {isMenuOpen ? "✕" : "☰"}
+          </button>
         </div>
 
-        <div className="nav">
+        <div className={`nav ${isMenuOpen ? "menu-open" : ""}`} id="main-nav-panel">
           <nav className="main-nav" aria-label="Main navigation">
             <ul className="nav-list">
               <li>
@@ -54,18 +76,30 @@ function Header({ isAdmin, userEmail, onLogout, onOpenLogin }: HeaderProps) {
           </nav>
         </div>
 
-        <div className="nav-actions">
+        <div className={`nav-actions ${isMenuOpen ? "menu-open" : ""}`}>
           {userEmail ? (
             <>
               <span className="user-pill">{userEmail}</span>
-              <button className="btn-login" onClick={onLogout}>
+              <button
+                className="btn-login"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  onLogout();
+                }}
+              >
                 Logout
               </button>
             </>
           ) : (
             <>
               <span className="guest-notice">Guest mode · not logged in</span>
-              <button className="btn-login" onClick={onOpenLogin}>
+              <button
+                className="btn-login"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  onOpenLogin();
+                }}
+              >
                 Login
               </button>
             </>

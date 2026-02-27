@@ -457,14 +457,14 @@ const QuestionsDashboard = ({ isAdmin = false, userEmail = null }: QuestionsDash
               <tbody>
                 {sortedQuestionRows.map((question) => (
                   <tr key={`${question.category}-${question.id}`}>
-                    <td>#{question.rank}</td>
-                    <td className="question-cell">{question.question}</td>
-                    <td>{question.category}</td>
-                    <td>{question.wrong}</td>
-                    <td>{question.correct}</td>
-                    <td>{question.attempts}</td>
+                    <td data-label="Rank" className="colmin">#{question.rank}</td>
+                    <td className="question-cell" data-label="Question">{question.question}</td>
+                    <td data-label="Category">{question.category}</td>
+                    <td data-label="Wrong">{question.wrong}</td>
+                    <td data-label="Correct">{question.correct}</td>
+                    <td data-label="Attempts">{question.attempts}</td>
                     {isAdmin && (
-                      <td>
+                      <td data-label="Action">
                         <button
                           type="button"
                           className="table-action-btn"

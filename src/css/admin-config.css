@@ -184,12 +184,9 @@
 
 @media (max-width: 640px) {
   .admin-config-page {
-    padding: 100px 16px 36px;
+    padding: 20px;
   }
 
-  .admin-metrics-grid {
-    grid-template-columns: 1fr;
-  }
 
   .admin-review-header,
   .admin-actions-row {
