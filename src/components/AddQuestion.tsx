@@ -372,7 +372,7 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
         <h2>Add Question</h2>
         {isAdmin && (
           <div
-            className="entry_mode_toggle"
+            className={`entry_mode_toggle ${entryMode === "single" ? "entry_mode_toggle_single" : "entry_mode_toggle_bulk"}`}
             role="radiogroup"
             aria-label="Question entry mode"
           >

@@ -150,6 +150,9 @@ nav.main-nav ul {
     margin-top: 4px;
     border-top: 1px solid rgba(139, 92, 246, 0.35);
     padding-top: 10px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
   }
 
   .nav-actions {

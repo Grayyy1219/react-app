@@ -86,7 +86,7 @@ textarea.question_input {
 }
 
 .option_input:focus {
-  border-color: #4f46e5;
+  border-color: var(--accent);
   outline: none;
 }
 
@@ -114,7 +114,7 @@ textarea.question_input {
   padding: 12px;
   border-radius: 8px;
   border: none;
-  background: #4f46e5;
+  background: var(--accent);
   color: white;
   font-weight: bold;
   cursor: pointer;
@@ -156,20 +156,43 @@ textarea.question_input {
 }
 
 .category_select:focus {
-  border-color: #4f46e5;
+  border-color: var(--accent);
   outline: none;
 }
 
 .entry_mode_toggle {
-  display: inline-flex;
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
   align-self: flex-start;
   padding: 4px;
   border-radius: 999px;
   background: #eef2ff;
   gap: 4px;
+  overflow: hidden;
+}
+
+.entry_mode_toggle::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  height: calc(100% - 8px);
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 8px 16px -12px rgba(79, 70, 229, 0.9);
+  transform: translateX(0);
+  transition: transform 220ms ease;
+}
+
+.entry_mode_toggle_bulk::before {
+  transform: translateX(100%);
 }
 
 .entry_mode_btn {
+  position: relative;
+  z-index: 1;
   border: 0;
   background: transparent;
   color: #3730a3;
@@ -177,11 +200,18 @@ textarea.question_input {
   border-radius: 999px;
   cursor: pointer;
   padding: 8px 14px;
+  transition: color 220ms ease;
 }
 
 .entry_mode_btn_active {
-  background: #4f46e5;
   color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entry_mode_toggle::before,
+  .entry_mode_btn {
+    transition: none;
+  }
 }
 
 .bulk_editor {

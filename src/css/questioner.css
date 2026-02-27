@@ -1,6 +1,6 @@
 .quiz-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #46178f, #2b0a5c);
+  background: var(--linear-gradient);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -21,7 +21,7 @@
 .category-btn {
   border: 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--btn-notselected-bg);
   color: #fff;
   padding: 10px 16px;
   font-weight: 600;

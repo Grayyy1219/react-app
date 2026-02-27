@@ -1,7 +1,7 @@
 .admin-config-page {
   min-height: 100vh;
   padding: 100px;
-  background: linear-gradient(135deg, #46178f, #2b0a5c);
+  background: var(--linear-gradient);
   color: #f8fafc;
 }
 
@@ -63,11 +63,11 @@
   font-weight: 700;
   cursor: pointer;
   background: #ede9fe;
-  color: #4c1d95;
+  color: var(--accent);
 }
 
 .admin-action-primary {
-  background: #4f46e5;
+  background: var(--accent);
   color: #f8fafc;
 }
 
@@ -99,7 +99,7 @@
   border-radius: 14px;
   padding: 14px;
   background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--btn-notselected-bg);
   backdrop-filter: blur(8px);
 }
 
@@ -156,7 +156,6 @@
   padding-left: 18px;
 }
 
-
 .admin-pending-card li {
   margin-bottom: 4px;
 }
@@ -186,7 +185,6 @@
   .admin-config-page {
     padding: 20px;
   }
-
 
   .admin-review-header,
   .admin-actions-row {

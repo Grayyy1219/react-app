@@ -1,7 +1,7 @@
 .questions-dashboard-page {
   min-height: 100vh;
   padding: 100px;
-  background: linear-gradient(135deg, #46178f, #2b0a5c);
+  background: var(--linear-gradient);
   color: #f8fafc;
 }
 
@@ -30,7 +30,7 @@
 }
 
 .rank-tooltip-trigger:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--btn-notselected-bg);
 }
 
 .questions-dashboard-header h1 {
@@ -54,7 +54,7 @@
   border-radius: 14px;
   padding: 16px;
   background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--btn-notselected-bg);
   backdrop-filter: blur(8px);
 }
 
@@ -69,34 +69,56 @@
 }
 
 .stats-toggle {
-  display: inline-flex;
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
   border: 1px solid rgba(167, 139, 250, 0.5);
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 16px;
 }
 
+.stats-toggle::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: #ede9fe;
+  transform: translateX(0);
+  transition: transform 220ms ease;
+}
+
+.stats-toggle-global::before {
+  transform: translateX(100%);
+}
+
 .stats-toggle-btn {
+  position: relative;
+  z-index: 1;
   border: 0;
-  background: rgba(255, 255, 255, 0.08);
+  background: transparent;
   color: #f8fafc;
   padding: 10px 14px;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.stats-toggle-btn + .stats-toggle-btn {
-  border-left: 1px solid rgba(167, 139, 250, 0.45);
+  transition: color 220ms ease;
 }
 
 .stats-toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
 }
 
 .stats-toggle-btn.active {
-  background: #ede9fe;
-  color: #4c1d95;
+  color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stats-toggle::before,
+  .stats-toggle-btn {
+    transition: none;
+  }
 }
 
 .dashboard-table-wrap {
@@ -107,7 +129,7 @@
 }
 
 .questions-table {
-  /* width: 100%; */
+  width: 100%;
   border-collapse: collapse;
   min-width: 900px;
 }
@@ -159,7 +181,7 @@
 
 .table-action-btn {
   background: #ede9fe;
-  color: #4c1d95;
+  color: var(--accent);
 }
 
 .table-action-btn:disabled {
@@ -227,7 +249,7 @@
 .editor-modal .question_input:focus,
 .editor-modal .option_input:focus,
 .editor-modal .category_select:focus {
-  border-color: #4f46e5;
+  border-color: var(--accent);
   outline: none;
 }
 
@@ -266,7 +288,7 @@
 }
 
 .primary-btn {
-  background: #4f46e5;
+  background: var(--accent);
   color: #fff;
 }
 
@@ -321,6 +343,7 @@
   .questions-table {
     min-width: 620px;
     table-layout: fixed;
+    width: unset;
   }
 
   .questions-table th,

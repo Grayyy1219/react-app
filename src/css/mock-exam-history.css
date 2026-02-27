@@ -1,6 +1,6 @@
 .mock-history-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #46178f, #2b0a5c);
+  background: var(--linear-gradient);
   padding: 100px;
   display: flex;
   justify-content: center;
@@ -30,7 +30,7 @@
 .mock-history-badge {
   border-radius: 999px;
   background: #ede9fe;
-  color: #4c1d95;
+  color: var(--accent);
   padding: 6px 12px;
   font-size: 13px;
   font-weight: 700;

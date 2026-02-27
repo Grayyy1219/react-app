@@ -395,7 +395,11 @@ const QuestionsDashboard = ({ isAdmin = false, userEmail = null }: QuestionsDash
         </div>
 
         {hasLoggedInUser && (
-          <div className="stats-toggle" role="group" aria-label="Stats scope">
+          <div
+            className={`stats-toggle ${statsScope === "mine" ? "stats-toggle-mine" : "stats-toggle-global"}`}
+            role="group"
+            aria-label="Stats scope"
+          >
             <button
               type="button"
               className={`stats-toggle-btn ${statsScope === "mine" ? "active" : ""}`}
