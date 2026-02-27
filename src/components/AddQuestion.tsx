@@ -130,6 +130,45 @@ const normalizeSpreadsheetToBulkText = (rows: string[][]) => {
     .join("\n");
 };
 
+const parseDelimitedLine = (line: string, delimiter: string) => {
+  const cells: string[] = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+
+    if (char === '"') {
+      if (inQuotes && line[index + 1] === '"') {
+        current += '"';
+        index += 1;
+        continue;
+      }
+
+      inQuotes = !inQuotes;
+      continue;
+    }
+
+    if (char === delimiter && !inQuotes) {
+      cells.push(current.trim());
+      current = "";
+      continue;
+    }
+
+    current += char;
+  }
+
+  cells.push(current.trim());
+  return cells;
+};
+
+const parseDelimitedText = (text: string, delimiter: string) =>
+  text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => parseDelimitedLine(line, delimiter));
+
 function AddQuestion({ isAdmin }: AddQuestionProps) {
   const [entryMode, setEntryMode] = useState<"single" | "bulk">("single");
   const [question, setQuestion] = useState("");
@@ -211,7 +250,7 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
     try {
       const filename = file.name.toLowerCase();
 
-      if (filename.endsWith(".csv") || filename.endsWith(".txt")) {
+      if (filename.endsWith(".txt")) {
         const text = await file.text();
         setBulkQuestionsText(
           (previous) => `${previous}${previous ? "\n" : ""}${text.trim()}`,
@@ -220,18 +259,17 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
         return;
       }
 
-      if (filename.endsWith(".tsv")) {
+      if (filename.endsWith(".csv") || filename.endsWith(".tsv")) {
         const text = await file.text();
-        const normalizedRows = text
-          .split("\n")
-          .map((line) => line.trim())
-          .filter(Boolean)
-          .map((line) => line.split("\t"));
+        const normalizedRows = parseDelimitedText(
+          text,
+          filename.endsWith(".csv") ? "," : "\t",
+        );
         const convertedBulkText =
           normalizeSpreadsheetToBulkText(normalizedRows);
 
         if (!convertedBulkText.trim()) {
-          throw new Error("No valid rows found in TSV file.");
+          throw new Error("No valid rows found in uploaded spreadsheet file.");
         }
 
         setBulkQuestionsText(
