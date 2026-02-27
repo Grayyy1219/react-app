@@ -151,6 +151,20 @@ const getWeightedRandomQuestion = (
   return weightedPool[weightedPool.length - 1].question;
 };
 
+const shuffleArray = <T,>(items: T[]) => {
+  const nextItems = [...items];
+
+  for (let index = nextItems.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [nextItems[index], nextItems[swapIndex]] = [
+      nextItems[swapIndex],
+      nextItems[index],
+    ];
+  }
+
+  return nextItems;
+};
+
 type QuestionerProps = {
   isAdmin?: boolean;
 };
@@ -174,6 +188,9 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
   const [showNote, setShowNote] = useState(false);
   const [userNotes, setUserNotes] = useState<Record<string, string>>({});
   const [noteDraft, setNoteDraft] = useState("");
+  const [shuffledOptionIndices, setShuffledOptionIndices] = useState<number[]>(
+    [],
+  );
 
   const currentUserKey = getCurrentUserKey();
   const noteStorageKey = currentUserKey
@@ -204,6 +221,17 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
     setShowNote(false);
     setNoteDraft(currentQuestion ? (userNotes[currentQuestion.id] ?? "") : "");
   }, [currentQuestion, userNotes]);
+
+  useEffect(() => {
+    if (!currentQuestion) {
+      setShuffledOptionIndices([]);
+      return;
+    }
+
+    setShuffledOptionIndices(
+      shuffleArray(currentQuestion.options.map((_, index) => index)),
+    );
+  }, [currentQuestion]);
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -493,17 +521,18 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
       )}
 
       <div className="choices">
-        {currentQuestion?.options.map((option, index) => (
+        {currentQuestion &&
+          shuffledOptionIndices.map((optionIndex, visualIndex) => (
           <button
-            key={`${currentQuestion.id}-${index}`}
+            key={`${currentQuestion.id}-${optionIndex}`}
             type="button"
-            className={`choice ${["red", "blue", "yellow", "green"][index % 4]} ${getChoiceClassName(index)}`}
-            onClick={() => handleAnswerSelect(index)}
+            className={`choice ${["red", "blue", "yellow", "green"][visualIndex % 4]} ${getChoiceClassName(optionIndex)}`}
+            onClick={() => handleAnswerSelect(optionIndex)}
             disabled={isAnswered}
           >
-            {option}
+            {currentQuestion.options[optionIndex]}
           </button>
-        ))}
+          ))}
       </div>
 
       {isAnswered && (
