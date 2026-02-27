@@ -151,7 +151,7 @@
 .note-confirm-modal {
   width: min(420px, 100%);
   padding: 20px;
-  background: rgba(10, 14, 28, 0.7);
+  background: rgba(10, 14, 28, 1);
   border: 1px solid rgba(167, 139, 250, 0.4);
   border-radius: 16px;
   color: white;
