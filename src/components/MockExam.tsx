@@ -133,6 +133,8 @@ const MockExam = ({ userEmail }: MockExamProps) => {
     questionCount > 0 &&
     availableQuestions.length >= questionCount;
 
+  const maxQuestionCount = Math.max(availableQuestions.length, 1);
+
   const score = useMemo(
     () =>
       examQuestions.reduce((total, question) => {
@@ -141,6 +143,12 @@ const MockExam = ({ userEmail }: MockExamProps) => {
       }, 0),
     [answers, examQuestions],
   );
+
+  const answeredCount = Object.keys(answers).length;
+  const completionRate =
+    examQuestions.length > 0
+      ? Math.round((answeredCount / examQuestions.length) * 100)
+      : 0;
 
   const toggleCategory = (category: QuestionCategory) => {
     setSelectedCategories((previous) => {
@@ -153,9 +161,10 @@ const MockExam = ({ userEmail }: MockExamProps) => {
   };
 
   const startExam = () => {
+    const normalizedQuestionCount = Math.min(Math.max(questionCount, 1), maxQuestionCount);
     const selectedQuestions = getShuffledQuestions(availableQuestions).slice(
       0,
-      questionCount,
+      normalizedQuestionCount,
     );
 
     setExamQuestions(selectedQuestions);
@@ -201,7 +210,7 @@ const MockExam = ({ userEmail }: MockExamProps) => {
     <div className="mock-exam-page">
       <div className="mock-exam-card">
         <h2>Mock Exam Builder</h2>
-        <p>Select categories and number of questions before starting your exam.</p>
+        <p>Select categories and the number of questions, then start your timed-style practice.</p>
 
         {isLoading && <p>Loading question bank...</p>}
         {!isLoading && error && <p className="mock-exam-error">{error}</p>}
@@ -227,15 +236,35 @@ const MockExam = ({ userEmail }: MockExamProps) => {
                 id="question-count"
                 type="number"
                 min={1}
-                max={availableQuestions.length || 1}
+                max={maxQuestionCount}
                 value={questionCount}
-                onChange={(event) => setQuestionCount(Number(event.target.value))}
+                onChange={(event) => {
+                  const nextValue = Number(event.target.value);
+
+                  if (Number.isNaN(nextValue)) {
+                    setQuestionCount(1);
+                    return;
+                  }
+
+                  setQuestionCount(Math.min(Math.max(Math.trunc(nextValue), 1), maxQuestionCount));
+                }}
               />
             </label>
 
-            <p className="mock-exam-helptext">
-              Available questions for selected categories: {availableQuestions.length}
-            </p>
+            <div className="mock-exam-stats" aria-live="polite">
+              <span className="mock-exam-stat-item">
+                <strong>Available</strong>
+                {availableQuestions.length}
+              </span>
+              <span className="mock-exam-stat-item">
+                <strong>Selected</strong>
+                {questionCount}
+              </span>
+              <span className="mock-exam-stat-item">
+                <strong>Categories</strong>
+                {selectedCategories.length}
+              </span>
+            </div>
 
             <button
               type="button"
@@ -251,7 +280,19 @@ const MockExam = ({ userEmail }: MockExamProps) => {
 
       {examQuestions.length > 0 && (
         <div className="mock-exam-form-card">
-          <h3>Mock Exam Questions</h3>
+          <div className="mock-exam-form-header">
+            <h3>Mock Exam Questions</h3>
+            <span className="mock-exam-progress-pill">
+              {answeredCount}/{examQuestions.length} answered
+            </span>
+          </div>
+          <p className="mock-exam-helptext">Answer all questions and submit to save your result.</p>
+          <div className="mock-exam-progress-track" aria-label="Exam progress">
+            <span
+              className="mock-exam-progress-fill"
+              style={{ width: `${completionRate}%` }}
+            />
+          </div>
           {examQuestions.map((question, index) => (
             <section key={question.id} className="mock-exam-question-block">
               <p className="mock-exam-question-title">
