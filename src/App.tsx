@@ -5,9 +5,11 @@ import AddQuestion from "./components/AddQuestion";
 import AuthPanel from "./components/AuthPanel";
 import QuestionsDashboard from "./components/QuestionsDashboard";
 import AdminConfig from "./components/AdminConfig";
+import MockExam from "./components/MockExam";
+import MockExamHistory from "./components/MockExamHistory";
 import type { UserRole } from "./firebase";
 
-type PageName = "home" | "add" | "questions" | "config";
+type PageName = "home" | "add" | "questions" | "config" | "mock-exam" | "history";
 
 type UserSession = {
   role: UserRole;
@@ -43,6 +45,14 @@ const pageFromHash = (hashValue: string): PageName => {
 
   if (hashValue === "#/config") {
     return "config";
+  }
+
+  if (hashValue === "#/mock-exam") {
+    return "mock-exam";
+  }
+
+  if (hashValue === "#/history") {
+    return "history";
   }
 
   return "home";
@@ -98,6 +108,14 @@ function App() {
 
     if (currentPage === "config") {
       return userRole === "admin" ? <AdminConfig /> : <Questioner isAdmin={false} />;
+    }
+
+    if (currentPage === "mock-exam") {
+      return <MockExam userEmail={userEmail} />;
+    }
+
+    if (currentPage === "history") {
+      return <MockExamHistory userEmail={userEmail} />;
     }
 
     return <Questioner isAdmin={userRole === "admin"} />;

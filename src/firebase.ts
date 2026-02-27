@@ -1,5 +1,12 @@
 import { initializeApp } from "firebase/app";
-import { getDatabase, get, ref, runTransaction, set } from "firebase/database";
+import {
+  getDatabase,
+  get,
+  push,
+  ref,
+  runTransaction,
+  set,
+} from "firebase/database";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD9iANgGXG8sfryA5qwVacmscyyNLCHlok",
@@ -29,6 +36,13 @@ const emailToKey = (email: string) =>
 type QuestionStat = {
   correct: number;
   wrong: number;
+};
+
+export type MockExamRecord = {
+  totalQuestions: number;
+  score: number;
+  selectedCategories: string[];
+  submittedAt: string;
 };
 
 const normalizeQuestionStats = (payload: unknown): Record<string, QuestionStat> => {
@@ -113,4 +127,48 @@ export const saveQuestionAttempt = async (
       return Number.isFinite(current) ? current + 1 : 1;
     },
   );
+};
+
+export const saveMockExamRecord = async (
+  userKey: string,
+  record: MockExamRecord,
+) => {
+  const historyRef = ref(db, `mockExamHistory/users/${userKey}`);
+  const attemptRef = push(historyRef);
+
+  if (!attemptRef.key) {
+    throw new Error("Unable to save mock exam history");
+  }
+
+  await set(attemptRef, record);
+};
+
+export const getMockExamHistory = async (userKey: string) => {
+  const snapshot = await get(ref(db, `mockExamHistory/users/${userKey}`));
+
+  if (!snapshot.exists()) {
+    return [] as Array<MockExamRecord & { id: string }>;
+  }
+
+  const payload = snapshot.val() as Record<string, Partial<MockExamRecord>>;
+
+  return Object.entries(payload)
+    .map(([id, record]) => ({
+      id,
+      totalQuestions: Number(record.totalQuestions ?? 0),
+      score: Number(record.score ?? 0),
+      selectedCategories: Array.isArray(record.selectedCategories)
+        ? record.selectedCategories.filter(
+            (category): category is string => typeof category === "string",
+          )
+        : [],
+      submittedAt:
+        typeof record.submittedAt === "string"
+          ? record.submittedAt
+          : new Date(0).toISOString(),
+    }))
+    .sort(
+      (a, b) =>
+        new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime(),
+    );
 };

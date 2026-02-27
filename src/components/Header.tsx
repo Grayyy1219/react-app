@@ -35,6 +35,16 @@ function Header({ isAdmin, userEmail, onLogout, onOpenLogin }: HeaderProps) {
               <li>
                 <a href="#/questions">Questions</a>
               </li>
+              {userEmail && (
+                <>
+                  <li>
+                    <a href="#/mock-exam">Mock Exam</a>
+                  </li>
+                  <li>
+                    <a href="#/history">History</a>
+                  </li>
+                </>
+              )}
               {isAdmin && (
                 <li>
                   <a href="#/config">Config</a>
