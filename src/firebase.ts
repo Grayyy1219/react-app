@@ -44,6 +44,8 @@ export type MockExamRecord = {
   selectedCategories: string[];
   submittedAt: string;
   questions?: MockExamQuestionRecord[];
+  isRetake?: boolean;
+  retakeOfAttemptId?: string;
 };
 
 export type MockExamQuestionRecord = {
@@ -208,6 +210,11 @@ export const getMockExamHistory = async (userKey: string) => {
             })
             .filter((question): question is MockExamQuestionRecord => question !== null)
         : [],
+      isRetake: record.isRetake === true,
+      retakeOfAttemptId:
+        typeof record.retakeOfAttemptId === "string"
+          ? record.retakeOfAttemptId
+          : undefined,
     }))
     .sort(
       (a, b) =>
