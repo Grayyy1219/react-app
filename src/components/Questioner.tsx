@@ -186,6 +186,7 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showNote, setShowNote] = useState(false);
+  const [isNoteConfirmOpen, setIsNoteConfirmOpen] = useState(false);
   const [userNotes, setUserNotes] = useState<Record<string, string>>({});
   const [noteDraft, setNoteDraft] = useState("");
   const [shuffledOptionIndices, setShuffledOptionIndices] = useState<number[]>(
@@ -219,6 +220,7 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
 
   useEffect(() => {
     setShowNote(false);
+    setIsNoteConfirmOpen(false);
     setNoteDraft(currentQuestion ? (userNotes[currentQuestion.id] ?? "") : "");
   }, [currentQuestion, userNotes]);
 
@@ -386,6 +388,24 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
     setUserNotes(nextNotes);
   };
 
+  const handleNoteToggle = () => {
+    if (showNote) {
+      setShowNote(false);
+      return;
+    }
+
+    setIsNoteConfirmOpen(true);
+  };
+
+  const confirmShowNote = () => {
+    setShowNote(true);
+    setIsNoteConfirmOpen(false);
+  };
+
+  const cancelShowNote = () => {
+    setIsNoteConfirmOpen(false);
+  };
+
   const handleNextQuestion = () => {
     if (!currentQuestion) {
       return;
@@ -468,7 +488,7 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
           <button
             type="button"
             className="note-toggle-btn"
-            onClick={() => setShowNote((prev) => !prev)}
+            onClick={handleNoteToggle}
           >
             {showNote ? "Hide note" : "Show note"}
           </button>
@@ -500,6 +520,36 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {isNoteConfirmOpen && (
+        <div className="note-confirm-overlay" role="presentation">
+          <div
+            className="note-confirm-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="note-confirm-title"
+          >
+            <h3 id="note-confirm-title">View note?</h3>
+            <p>Notes may include hints or direct answers for this question.</p>
+            <div className="note-confirm-actions">
+              <button
+                type="button"
+                className="note-confirm-cancel"
+                onClick={cancelShowNote}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="note-confirm-accept"
+                onClick={confirmShowNote}
+              >
+                View note
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
