@@ -14,12 +14,14 @@ type QuestionItem = {
   category: QuestionCategory;
   options: string[];
   correctIndex: number;
+  hint: string;
 };
 
 type FirebaseQuestion = {
   question?: string;
   options?: string[];
   correctIndex?: number;
+  hint?: string;
 };
 
 type MockExamProps = {
@@ -56,6 +58,7 @@ const normalizeQuestions = (
         category,
         options,
         correctIndex,
+        hint: value.hint?.trim() ?? "",
       } satisfies QuestionItem;
     })
     .filter((item): item is QuestionItem => item !== null);
@@ -194,6 +197,14 @@ const MockExam = ({ userEmail }: MockExamProps) => {
         score,
         selectedCategories,
         submittedAt: new Date().toISOString(),
+        questions: examQuestions.map((question) => ({
+          id: question.id,
+          question: question.question,
+          category: question.category,
+          options: question.options,
+          correctIndex: question.correctIndex,
+          selectedIndex: answers[question.id],
+        })),
       });
       setIsSubmitted(true);
     } catch (submitError) {
@@ -310,7 +321,20 @@ const MockExam = ({ userEmail }: MockExamProps) => {
               <p className="mock-exam-question-category">{question.category}</p>
               <div className="mock-exam-options">
                 {question.options.map((option, optionIndex) => (
-                  <label key={`${question.id}-${optionIndex}`} className="mock-exam-option">
+                  <label
+                    key={`${question.id}-${optionIndex}`}
+                    className={`mock-exam-option ${
+                      isSubmitted && optionIndex === question.correctIndex
+                        ? "mock-exam-option-correct"
+                        : ""
+                    } ${
+                      isSubmitted &&
+                      answers[question.id] === optionIndex &&
+                      optionIndex !== question.correctIndex
+                        ? "mock-exam-option-wrong"
+                        : ""
+                    }`}
+                  >
                     <input
                       type="radio"
                       name={`question-${question.id}`}
@@ -327,6 +351,25 @@ const MockExam = ({ userEmail }: MockExamProps) => {
                   </label>
                 ))}
               </div>
+
+              {isSubmitted && (
+                <div className="mock-exam-review-note">
+                  {answers[question.id] === question.correctIndex ? (
+                    <p className="mock-exam-feedback-correct">
+                      ✅ Correct answer: {question.options[question.correctIndex]}
+                    </p>
+                  ) : (
+                    <>
+                      <p className="mock-exam-feedback-wrong">
+                        ❌ Wrong answer. Correct answer: {question.options[question.correctIndex]}
+                      </p>
+                      {question.hint && (
+                        <p className="mock-exam-feedback-hint">Hint: {question.hint}</p>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
             </section>
           ))}
 

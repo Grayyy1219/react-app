@@ -43,6 +43,16 @@ export type MockExamRecord = {
   score: number;
   selectedCategories: string[];
   submittedAt: string;
+  questions?: MockExamQuestionRecord[];
+};
+
+export type MockExamQuestionRecord = {
+  id: string;
+  question: string;
+  category: string;
+  options: string[];
+  correctIndex: number;
+  selectedIndex: number;
 };
 
 const normalizeQuestionStats = (payload: unknown): Record<string, QuestionStat> => {
@@ -166,6 +176,38 @@ export const getMockExamHistory = async (userKey: string) => {
         typeof record.submittedAt === "string"
           ? record.submittedAt
           : new Date(0).toISOString(),
+      questions: Array.isArray(record.questions)
+        ? record.questions
+            .map((question) => {
+              if (!question || typeof question !== "object") {
+                return null;
+              }
+
+              const candidate = question as Partial<MockExamQuestionRecord>;
+
+              if (
+                typeof candidate.id !== "string" ||
+                typeof candidate.question !== "string" ||
+                typeof candidate.category !== "string" ||
+                !Array.isArray(candidate.options) ||
+                candidate.options.some((option) => typeof option !== "string") ||
+                typeof candidate.correctIndex !== "number" ||
+                typeof candidate.selectedIndex !== "number"
+              ) {
+                return null;
+              }
+
+              return {
+                id: candidate.id,
+                question: candidate.question,
+                category: candidate.category,
+                options: candidate.options,
+                correctIndex: candidate.correctIndex,
+                selectedIndex: candidate.selectedIndex,
+              } satisfies MockExamQuestionRecord;
+            })
+            .filter((question): question is MockExamQuestionRecord => question !== null)
+        : [],
     }))
     .sort(
       (a, b) =>

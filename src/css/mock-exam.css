@@ -206,6 +206,39 @@
   margin-top: 2px;
 }
 
+.mock-exam-option-correct {
+  border-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.mock-exam-option-wrong {
+  border-color: #dc2626;
+  background: #fef2f2;
+}
+
+.mock-exam-review-note {
+  margin-top: 10px;
+}
+
+.mock-exam-feedback-correct,
+.mock-exam-feedback-wrong,
+.mock-exam-feedback-hint {
+  margin: 4px 0;
+}
+
+.mock-exam-feedback-correct {
+  color: #15803d;
+}
+
+.mock-exam-feedback-wrong {
+  color: #b91c1c;
+}
+
+.mock-exam-feedback-hint {
+  color: #334155;
+  font-style: italic;
+}
+
 .mock-exam-result {
   margin-top: 18px;
   padding: 18px;

@@ -10,6 +10,7 @@ type HistoryItem = MockExamRecord & { id: string };
 
 const MockExamHistory = ({ userEmail }: MockExamHistoryProps) => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [expandedAttemptId, setExpandedAttemptId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,6 +18,7 @@ const MockExamHistory = ({ userEmail }: MockExamHistoryProps) => {
     const loadHistory = async () => {
       if (!userEmail) {
         setHistory([]);
+        setExpandedAttemptId(null);
         setIsLoading(false);
         return;
       }
@@ -37,6 +39,21 @@ const MockExamHistory = ({ userEmail }: MockExamHistoryProps) => {
 
     void loadHistory();
   }, [userEmail]);
+
+  useEffect(() => {
+    if (history.length === 0) {
+      setExpandedAttemptId(null);
+      return;
+    }
+
+    setExpandedAttemptId((previous) => {
+      if (previous && history.some((item) => item.id === previous)) {
+        return previous;
+      }
+
+      return history[0].id;
+    });
+  }, [history]);
 
   const averageScore = useMemo(() => {
     if (history.length === 0) {
@@ -98,6 +115,7 @@ const MockExamHistory = ({ userEmail }: MockExamHistoryProps) => {
                   item.totalQuestions > 0
                     ? Math.round((item.score / item.totalQuestions) * 100)
                     : 0;
+                const isExpanded = item.id === expandedAttemptId;
 
                 return (
                   <li key={item.id} className="mock-history-item">
@@ -114,6 +132,47 @@ const MockExamHistory = ({ userEmail }: MockExamHistoryProps) => {
                     <p className="mock-history-item-categories">
                       <strong>Categories:</strong> {item.selectedCategories.join(", ")}
                     </p>
+
+                    <button
+                      type="button"
+                      className="mock-history-view-btn"
+                      onClick={() => setExpandedAttemptId(isExpanded ? null : item.id)}
+                    >
+                      {isExpanded ? "Hide Attempt Details" : "View Attempt Details"}
+                    </button>
+
+                    {isExpanded && (
+                      <div className="mock-history-details">
+                        {!item.questions || item.questions.length === 0 ? (
+                          <p className="mock-history-details-empty">
+                            This attempt was saved before detailed review was available.
+                          </p>
+                        ) : (
+                          <ol className="mock-history-question-list">
+                            {item.questions.map((question) => {
+                              const selectedOption = question.options[question.selectedIndex];
+                              const correctOption = question.options[question.correctIndex];
+                              const isCorrect = question.selectedIndex === question.correctIndex;
+
+                              return (
+                                <li key={`${item.id}-${question.id}`} className="mock-history-question-item">
+                                  <p className="mock-history-question-title">{question.question}</p>
+                                  <p className="mock-history-question-meta">{question.category}</p>
+                                  <p className={`mock-history-question-answer ${isCorrect ? "is-correct" : "is-wrong"}`}>
+                                    <strong>Your answer:</strong> {selectedOption ?? "No answer"}
+                                  </p>
+                                  {!isCorrect && (
+                                    <p className="mock-history-question-correct-answer">
+                                      <strong>Correct answer:</strong> {correctOption}
+                                    </p>
+                                  )}
+                                </li>
+                              );
+                            })}
+                          </ol>
+                        )}
+                      </div>
+                    )}
                   </li>
                 );
               })}
