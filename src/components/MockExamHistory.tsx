@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "../css/mock-exam-history.css";
 import { getMockExamHistory, type MockExamRecord, toUserKey } from "../firebase";
 
@@ -38,36 +38,87 @@ const MockExamHistory = ({ userEmail }: MockExamHistoryProps) => {
     void loadHistory();
   }, [userEmail]);
 
+  const averageScore = useMemo(() => {
+    if (history.length === 0) {
+      return 0;
+    }
+
+    const totalPercentage = history.reduce((runningTotal, item) => {
+      if (item.totalQuestions === 0) {
+        return runningTotal;
+      }
+
+      return runningTotal + (item.score / item.totalQuestions) * 100;
+    }, 0);
+
+    return Math.round(totalPercentage / history.length);
+  }, [history]);
+
   return (
     <div className="mock-history-page">
       <div className="mock-history-card">
-        <h2>Mock Exam History</h2>
+        <div className="mock-history-header">
+          <h2>Mock Exam History</h2>
+          {userEmail && !isLoading && !error && history.length > 0 && (
+            <span className="mock-history-badge">{history.length} Attempts</span>
+          )}
+        </div>
+        <p className="mock-history-subtitle">
+          Track your previous attempts and monitor your performance over time.
+        </p>
 
-        {!userEmail && <p>Please login first to view your mock exam history.</p>}
-        {userEmail && isLoading && <p>Loading history...</p>}
+        {!userEmail && (
+          <p className="mock-history-empty-state">
+            Please login first to view your mock exam history.
+          </p>
+        )}
+        {userEmail && isLoading && <p className="mock-history-empty-state">Loading history...</p>}
         {userEmail && !isLoading && error && <p className="mock-history-error">{error}</p>}
 
         {userEmail && !isLoading && !error && history.length === 0 && (
-          <p>You have not taken any mock exam yet.</p>
+          <p className="mock-history-empty-state">You have not taken any mock exam yet.</p>
         )}
 
         {userEmail && !isLoading && !error && history.length > 0 && (
-          <ul className="mock-history-list">
-            {history.map((item) => (
-              <li key={item.id} className="mock-history-item">
-                <p>
-                  <strong>Score:</strong> {item.score} / {item.totalQuestions}
-                </p>
-                <p>
-                  <strong>Categories:</strong> {item.selectedCategories.join(", ")}
-                </p>
-                <p>
-                  <strong>Taken at:</strong>{" "}
-                  {new Date(item.submittedAt).toLocaleString()}
-                </p>
-              </li>
-            ))}
-          </ul>
+          <>
+            <div className="mock-history-summary" aria-live="polite">
+              <span>
+                <strong>Attempts</strong>
+                {history.length}
+              </span>
+              <span>
+                <strong>Average Score</strong>
+                {averageScore}%
+              </span>
+            </div>
+
+            <ul className="mock-history-list">
+              {history.map((item) => {
+                const percentage =
+                  item.totalQuestions > 0
+                    ? Math.round((item.score / item.totalQuestions) * 100)
+                    : 0;
+
+                return (
+                  <li key={item.id} className="mock-history-item">
+                    <div className="mock-history-item-header">
+                      <p className="mock-history-item-score">
+                        {item.score} / {item.totalQuestions}
+                        <span>{percentage}%</span>
+                      </p>
+                      <span className="mock-history-item-date">
+                        {new Date(item.submittedAt).toLocaleString()}
+                      </span>
+                    </div>
+
+                    <p className="mock-history-item-categories">
+                      <strong>Categories:</strong> {item.selectedCategories.join(", ")}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
         )}
       </div>
     </div>

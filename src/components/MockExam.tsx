@@ -149,6 +149,15 @@ const MockExam = ({ userEmail }: MockExamProps) => {
     examQuestions.length > 0
       ? Math.round((answeredCount / examQuestions.length) * 100)
       : 0;
+  const scorePercentage =
+    examQuestions.length > 0 ? Math.round((score / examQuestions.length) * 100) : 0;
+  const incorrectCount = Math.max(examQuestions.length - score, 0);
+  const resultStatus =
+    scorePercentage >= 80
+      ? "Excellent"
+      : scorePercentage >= 60
+        ? "Good"
+        : "Needs Improvement";
 
   const toggleCategory = (category: QuestionCategory) => {
     setSelectedCategories((previous) => {
@@ -332,10 +341,33 @@ const MockExam = ({ userEmail }: MockExamProps) => {
             </button>
           ) : (
             <div className="mock-exam-result">
-              <h4>
-                Your score: {score} / {examQuestions.length}
-              </h4>
-              <p>Your exam has been saved in the history tab.</p>
+              <div className="mock-exam-result-header">
+                <h4>Exam Result Summary</h4>
+                <span className="mock-exam-result-status">{resultStatus}</span>
+              </div>
+
+              <p className="mock-exam-result-score">
+                {score} / {examQuestions.length} <span>({scorePercentage}%)</span>
+              </p>
+
+              <div className="mock-exam-result-metrics">
+                <span>
+                  <strong>Correct</strong>
+                  {score}
+                </span>
+                <span>
+                  <strong>Incorrect</strong>
+                  {incorrectCount}
+                </span>
+                <span>
+                  <strong>Categories</strong>
+                  {selectedCategories.length}
+                </span>
+              </div>
+
+              <p className="mock-exam-result-note">
+                Your exam has been saved in the history tab.
+              </p>
             </div>
           )}
         </div>

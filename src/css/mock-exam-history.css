@@ -9,10 +9,63 @@
 .mock-history-card {
   width: 900px;
   max-width: 100%;
-  background: #ffffff;
+  background: linear-gradient(180deg, #ffffff 0%, #fafaff 100%);
+  border: 1px solid rgba(139, 92, 246, 0.14);
   border-radius: 20px;
   padding: 30px;
-  box-shadow: 0px 15px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0px 18px 44px rgba(9, 6, 23, 0.34);
+}
+
+.mock-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mock-history-header h2 {
+  margin: 0;
+}
+
+.mock-history-badge {
+  border-radius: 999px;
+  background: #ede9fe;
+  color: #4c1d95;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.mock-history-subtitle {
+  margin: 8px 0 16px;
+  color: #475569;
+}
+
+.mock-history-summary {
+  margin: 14px 0 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.mock-history-summary span {
+  background: #f8f7ff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 700;
+  min-width: 120px;
+  display: grid;
+  gap: 2px;
+}
+
+.mock-history-summary strong {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
 }
 
 .mock-history-list {
@@ -20,20 +73,55 @@
   display: grid;
   gap: 12px;
   margin-top: 16px;
+  padding-left: 0;
 }
 
 .mock-history-item {
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 14px;
+  background: #ffffff;
   display: grid;
-  gap: 6px;
+  gap: 8px;
+}
+
+.mock-history-item-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.mock-history-item-score {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #1f2937;
+}
+
+.mock-history-item-score span {
+  margin-left: 8px;
+  color: #6d28d9;
+  font-size: 0.9rem;
+}
+
+.mock-history-item-date {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.mock-history-item-categories {
+  margin: 0;
+  color: #334155;
+}
+
+.mock-history-empty-state {
+  color: #475569;
 }
 
 .mock-history-error {
   color: #b91c1c;
 }
-
 
 @media (max-width: 900px) {
   .mock-history-page {
@@ -45,9 +133,13 @@
     padding: 18px 14px;
   }
 
+  .mock-history-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .mock-history-card h2 {
     font-size: 1.2rem;
-    margin-bottom: 6px;
   }
 
   .mock-history-item {
@@ -55,5 +147,9 @@
     padding: 12px;
     font-size: 0.95rem;
     line-height: 1.4;
+  }
+
+  .mock-history-item-header {
+    flex-direction: column;
   }
 }
