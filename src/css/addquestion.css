@@ -159,3 +159,54 @@ textarea.question_input {
   border-color: #4f46e5;
   outline: none;
 }
+
+.entry_mode_toggle {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 4px;
+  border-radius: 999px;
+  background: #eef2ff;
+  gap: 4px;
+}
+
+.entry_mode_btn {
+  border: 0;
+  background: transparent;
+  color: #3730a3;
+  font-weight: 600;
+  border-radius: 999px;
+  cursor: pointer;
+  padding: 8px 14px;
+}
+
+.entry_mode_btn_active {
+  background: #4f46e5;
+  color: #fff;
+}
+
+.bulk_editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bulk_help_text {
+  margin: 0;
+  color: #475569;
+  font-size: 13px;
+}
+
+.bulk_upload_label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.bulk_file_input {
+  font-size: 13px;
+  color: #334155;
+}
+
+.bulk_textarea {
+  min-height: 180px;
+}
