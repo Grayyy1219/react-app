@@ -1,6 +1,6 @@
 .questions-dashboard-page {
   min-height: 100vh;
-  padding: 110px 24px 48px;
+  padding: 100px;
   background: linear-gradient(135deg, #46178f, #2b0a5c);
   color: #f8fafc;
 }

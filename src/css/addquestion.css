@@ -1,6 +1,5 @@
 .a_q_form {
-  min-width: 500px;
-  margin: 40px auto;
+  min-width: 700px;
   padding: 30px;
   border-radius: 12px;
   background: #fff;
@@ -133,8 +132,8 @@ textarea.question_input {
 .questioner_div {
   min-height: 100vh;
   display: flex;
-  align-items: center;
-  padding: 92px 16px 24px;
+  justify-content: center;
+  padding: 100px;
 }
 
 .category_field {
@@ -212,7 +211,6 @@ textarea.question_input {
   min-height: 180px;
 }
 
-
 @media (max-width: 900px) {
   .a_q_form {
     min-width: 0;
@@ -282,7 +280,6 @@ textarea.question_input {
     font-size: 12px;
   }
   .questioner_div {
-  padding: 20px;
-}
-
+    padding: 20px;
+  }
 }

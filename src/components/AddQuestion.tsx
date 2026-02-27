@@ -21,8 +21,16 @@ type BulkQuestionPayload = {
   createdAt: number;
 };
 
-const parseBulkLine = (line: string, rowNumber: number, selectedCategory: QuestionCategory, isAdmin: boolean) => {
-  const columns = line.split("|").map((column) => column.trim()).filter(Boolean);
+const parseBulkLine = (
+  line: string,
+  rowNumber: number,
+  selectedCategory: QuestionCategory,
+  isAdmin: boolean,
+) => {
+  const columns = line
+    .split("|")
+    .map((column) => column.trim())
+    .filter(Boolean);
   const questionText = columns[0] ?? "";
 
   if (!questionText || columns.length < 3) {
@@ -40,7 +48,9 @@ const parseBulkLine = (line: string, rowNumber: number, selectedCategory: Questi
     optionTokens.pop();
   }
 
-  const nextCorrectIndex = optionTokens.findIndex((option) => option.startsWith("*"));
+  const nextCorrectIndex = optionTokens.findIndex((option) =>
+    option.startsWith("*"),
+  );
 
   if (optionTokens.length < 2 || nextCorrectIndex === -1) {
     throw new Error(
@@ -73,7 +83,11 @@ const normalizeSpreadsheetToBulkText = (rows: string[][]) => {
   const correctIndex = firstRow.findIndex((cell) => cell.includes("correct"));
   const hintIndex = firstRow.findIndex((cell) => cell.includes("hint"));
   const optionIndexes = firstRow.reduce<number[]>((result, cell, index) => {
-    if (cell.includes("option") || cell.includes("choice") || cell === "answer") {
+    if (
+      cell.includes("option") ||
+      cell.includes("choice") ||
+      cell === "answer"
+    ) {
       result.push(index);
     }
 
@@ -105,7 +119,10 @@ const normalizeSpreadsheetToBulkText = (rows: string[][]) => {
 
       const question = row[0]?.trim() ?? "";
       const correct = row[1]?.trim() ?? "";
-      const wrongOptions = row.slice(2).map((value) => value.trim()).filter(Boolean);
+      const wrongOptions = row
+        .slice(2)
+        .map((value) => value.trim())
+        .filter(Boolean);
 
       return [question, `*${correct}`, ...wrongOptions].join("|");
     })
@@ -118,7 +135,9 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
   const [question, setQuestion] = useState("");
   const [hint, setHint] = useState("");
   const [bulkQuestionsText, setBulkQuestionsText] = useState("");
-  const [category, setCategory] = useState<QuestionCategory>("General Information");
+  const [category, setCategory] = useState<QuestionCategory>(
+    "General Information",
+  );
   const [options, setOptions] = useState<string[]>(["", ""]);
   const [correctIndex, setCorrectIndex] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -131,7 +150,9 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
 
     const loadSettings = async () => {
       try {
-        const response = await fetch(`${FIREBASE_DB_URL}/settings/common/submissionsOpen.json`);
+        const response = await fetch(
+          `${FIREBASE_DB_URL}/settings/common/submissionsOpen.json`,
+        );
 
         if (!response.ok) {
           throw new Error("Failed to load submissions setting");
@@ -162,7 +183,9 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
   };
 
   const removeOption = (index: number) => {
-    setOptions((previous) => previous.filter((_, optionIndex) => optionIndex !== index));
+    setOptions((previous) =>
+      previous.filter((_, optionIndex) => optionIndex !== index),
+    );
     setCorrectIndex((previous) => {
       if (previous === null) {
         return previous;
@@ -176,7 +199,9 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
     });
   };
 
-  const handleBulkFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBulkFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = event.target.files?.[0];
 
     if (!file) {
@@ -188,7 +213,9 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
 
       if (filename.endsWith(".csv") || filename.endsWith(".txt")) {
         const text = await file.text();
-        setBulkQuestionsText((previous) => `${previous}${previous ? "\n" : ""}${text.trim()}`);
+        setBulkQuestionsText(
+          (previous) => `${previous}${previous ? "\n" : ""}${text.trim()}`,
+        );
         event.target.value = "";
         return;
       }
@@ -200,23 +227,29 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
           .map((line) => line.trim())
           .filter(Boolean)
           .map((line) => line.split("\t"));
-        const convertedBulkText = normalizeSpreadsheetToBulkText(normalizedRows);
+        const convertedBulkText =
+          normalizeSpreadsheetToBulkText(normalizedRows);
 
         if (!convertedBulkText.trim()) {
           throw new Error("No valid rows found in TSV file.");
         }
 
-        setBulkQuestionsText((previous) =>
-          `${previous}${previous && convertedBulkText ? "\n" : ""}${convertedBulkText}`,
+        setBulkQuestionsText(
+          (previous) =>
+            `${previous}${previous && convertedBulkText ? "\n" : ""}${convertedBulkText}`,
         );
         event.target.value = "";
         return;
       }
 
-      throw new Error("Unsupported file type. Please upload .csv, .tsv, or .txt");
+      throw new Error(
+        "Unsupported file type. Please upload .csv, .tsv, or .txt",
+      );
     } catch (error) {
       console.error("Unable to parse upload", error);
-      alert(error instanceof Error ? error.message : "Failed to parse upload file.");
+      alert(
+        error instanceof Error ? error.message : "Failed to parse upload file.",
+      );
     }
   };
 
@@ -240,12 +273,18 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
       return;
     }
 
-    if (entryMode === "single" && (trimmedOptions.length === 0 || trimmedOptions.some((option) => !option))) {
+    if (
+      entryMode === "single" &&
+      (trimmedOptions.length === 0 || trimmedOptions.some((option) => !option))
+    ) {
       alert("Please add at least one answer option.");
       return;
     }
 
-    if (entryMode === "single" && (correctIndex === null || !options[correctIndex]?.trim())) {
+    if (
+      entryMode === "single" &&
+      (correctIndex === null || !options[correctIndex]?.trim())
+    ) {
       alert("Please select the correct answer.");
       return;
     }
@@ -286,19 +325,22 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
         setBulkQuestionsText("");
         alert(`Added ${parsedRows.length} questions successfully.`);
       } else {
-        const response = await fetch(`${FIREBASE_DB_URL}/${resourcePath}.json`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            question: question.trim(),
-            category: selectedCategory,
-            options: trimmedOptions,
-            correctIndex,
-            hint: hint.trim(),
-            status: isAdmin ? "approved" : "pending",
-            createdAt: Date.now(),
-          }),
-        });
+        const response = await fetch(
+          `${FIREBASE_DB_URL}/${resourcePath}.json`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              question: question.trim(),
+              category: selectedCategory,
+              options: trimmedOptions,
+              correctIndex,
+              hint: hint.trim(),
+              status: isAdmin ? "approved" : "pending",
+              createdAt: Date.now(),
+            }),
+          },
+        );
 
         if (!response.ok) {
           throw new Error("Firebase request failed");
@@ -328,6 +370,28 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
     <div className="questioner_div">
       <form onSubmit={handleSubmit} className="a_q_form">
         <h2>Add Question</h2>
+        {isAdmin && (
+          <div
+            className="entry_mode_toggle"
+            role="radiogroup"
+            aria-label="Question entry mode"
+          >
+            <button
+              type="button"
+              className={`entry_mode_btn ${entryMode === "single" ? "entry_mode_btn_active" : ""}`}
+              onClick={() => setEntryMode("single")}
+            >
+              Single
+            </button>
+            <button
+              type="button"
+              className={`entry_mode_btn ${entryMode === "bulk" ? "entry_mode_btn_active" : ""}`}
+              onClick={() => setEntryMode("bulk")}
+            >
+              Bulk
+            </button>
+          </div>
+        )}
         <p className="submission_notice">
           {isAdmin
             ? "Admin mode: your submission is published immediately."
@@ -362,7 +426,9 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
             id="question-category"
             className="category_select"
             value={category}
-            onChange={(event) => setCategory(event.target.value as QuestionCategory)}
+            onChange={(event) =>
+              setCategory(event.target.value as QuestionCategory)
+            }
           >
             {QUESTION_CATEGORIES.map((categoryOption) => (
               <option key={categoryOption} value={categoryOption}>
@@ -371,29 +437,15 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
             ))}
           </select>
         </div>
-        {isAdmin && (
-          <div className="entry_mode_toggle" role="radiogroup" aria-label="Question entry mode">
-            <button
-              type="button"
-              className={`entry_mode_btn ${entryMode === "single" ? "entry_mode_btn_active" : ""}`}
-              onClick={() => setEntryMode("single")}
-            >
-              Single
-            </button>
-            <button
-              type="button"
-              className={`entry_mode_btn ${entryMode === "bulk" ? "entry_mode_btn_active" : ""}`}
-              onClick={() => setEntryMode("bulk")}
-            >
-              Bulk
-            </button>
-          </div>
-        )}
+
         {entryMode === "single" ? (
           <>
             <div className="options_container">
               {options.map((option, index) => (
-                <div className={`option_row ${correctIndex === index ? "option_row_selected" : ""}`} key={index}>
+                <div
+                  className={`option_row ${correctIndex === index ? "option_row_selected" : ""}`}
+                  key={index}
+                >
                   <input
                     type="checkbox"
                     checked={correctIndex === index}
@@ -403,7 +455,9 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
                   <input
                     type="text"
                     value={option}
-                    onChange={(event) => updateOption(index, event.target.value)}
+                    onChange={(event) =>
+                      updateOption(index, event.target.value)
+                    }
                     placeholder={`Option ${index + 1}`}
                     required
                     className="option_input"
@@ -420,14 +474,19 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
                 </div>
               ))}
             </div>
-            <button type="button" className="option_add_btn" onClick={addOption}>
+            <button
+              type="button"
+              className="option_add_btn"
+              onClick={addOption}
+            >
               + Add answer option
             </button>
           </>
         ) : (
           <div className="bulk_editor">
             <p className="bulk_help_text">
-              Paste rows using: question|*correct option|wrong option|...|hint:optional hint
+              Paste rows using: question|*correct option|wrong
+              option|...|hint:optional hint
             </p>
             <label className="bulk_upload_label" htmlFor="bulk-file-upload">
               Upload file (.csv, .tsv, .txt)
@@ -450,8 +509,16 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
             />
           </div>
         )}
-        <button type="submit" className="a_q_btn" disabled={isSaving || (!isAdmin && !submissionsOpen)}>
-          {isSaving ? "Saving..." : entryMode === "bulk" ? "Bulk Add Questions" : "Add Question"}
+        <button
+          type="submit"
+          className="a_q_btn"
+          disabled={isSaving || (!isAdmin && !submissionsOpen)}
+        >
+          {isSaving
+            ? "Saving..."
+            : entryMode === "bulk"
+              ? "Bulk Add Questions"
+              : "Add Question"}
         </button>
       </form>
     </div>
