@@ -13,8 +13,18 @@ type MockExamHistoryProps = {
 
 type HistoryItem = MockExamRecord & { id: string };
 
+type SortOption = "newest" | "oldest" | "score-high" | "score-low";
+
 const getAnswerKey = (question: { id: string; category: string }) =>
   `${question.category}-${question.id}`;
+
+const getAttemptPercentage = (attempt: Pick<MockExamRecord, "score" | "totalQuestions">) => {
+  if (attempt.totalQuestions <= 0) {
+    return 0;
+  }
+
+  return Math.round((attempt.score / attempt.totalQuestions) * 100);
+};
 
 const MockExamHistory = ({ userEmail }: MockExamHistoryProps) => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -24,6 +34,8 @@ const MockExamHistory = ({ userEmail }: MockExamHistoryProps) => {
   const [isSavingRetake, setIsSavingRetake] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchValue, setSearchValue] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -62,6 +74,42 @@ const MockExamHistory = ({ userEmail }: MockExamHistoryProps) => {
     () => history.find((item) => item.id === selectedAttemptId) ?? null,
     [history, selectedAttemptId],
   );
+
+  const filteredHistory = useMemo(() => {
+    const normalizedSearch = searchValue.trim().toLowerCase();
+
+    const bySearch = history.filter((item) => {
+      if (!normalizedSearch) {
+        return true;
+      }
+
+      const categories = item.selectedCategories.join(" ").toLowerCase();
+      const submittedAt = new Date(item.submittedAt).toLocaleString().toLowerCase();
+      const scoreText = `${item.score}/${item.totalQuestions}`;
+
+      return (
+        categories.includes(normalizedSearch) ||
+        submittedAt.includes(normalizedSearch) ||
+        scoreText.includes(normalizedSearch)
+      );
+    });
+
+    return [...bySearch].sort((a, b) => {
+      if (sortBy === "oldest") {
+        return new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime();
+      }
+
+      if (sortBy === "score-high") {
+        return getAttemptPercentage(b) - getAttemptPercentage(a);
+      }
+
+      if (sortBy === "score-low") {
+        return getAttemptPercentage(a) - getAttemptPercentage(b);
+      }
+
+      return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
+    });
+  }, [history, searchValue, sortBy]);
 
   const retakeQuestionCount = selectedAttempt?.questions?.length ?? 0;
   const retakeScore = useMemo(() => {
@@ -116,34 +164,40 @@ const MockExamHistory = ({ userEmail }: MockExamHistoryProps) => {
     }
   };
 
-  const averageScore = useMemo(() => {
+  const metrics = useMemo(() => {
     if (history.length === 0) {
-      return 0;
+      return {
+        averageScore: 0,
+        bestScore: 0,
+        belowTargetCount: 0,
+        latestScore: 0,
+      };
     }
 
-    const totalPercentage = history.reduce((runningTotal, item) => {
-      if (item.totalQuestions === 0) {
-        return runningTotal;
-      }
+    const percentages = history.map((item) => getAttemptPercentage(item));
 
-      return runningTotal + (item.score / item.totalQuestions) * 100;
-    }, 0);
-
-    return Math.round(totalPercentage / history.length);
+    return {
+      averageScore: Math.round(percentages.reduce((total, value) => total + value, 0) / percentages.length),
+      bestScore: Math.max(...percentages),
+      belowTargetCount: percentages.filter((value) => value < 80).length,
+      latestScore: getAttemptPercentage(history[0]),
+    };
   }, [history]);
 
   return (
     <div className="mock-history-page">
       <div className="mock-history-card">
         <div className="mock-history-header">
-          <h2>Mock Exam History</h2>
+          <div>
+            <h2>Mock Exam History</h2>
+            <p className="mock-history-subtitle">
+              Review your past attempts, spot weak areas, and launch retakes when needed.
+            </p>
+          </div>
           {userEmail && !isLoading && !error && history.length > 0 && (
             <span className="mock-history-badge">{history.length} Attempts</span>
           )}
         </div>
-        <p className="mock-history-subtitle">
-          Track your previous attempts and monitor your performance over time.
-        </p>
 
         {!userEmail && (
           <p className="mock-history-empty-state">
@@ -159,60 +213,100 @@ const MockExamHistory = ({ userEmail }: MockExamHistoryProps) => {
 
         {userEmail && !isLoading && !error && history.length > 0 && (
           <>
-            <div className="mock-history-summary" aria-live="polite">
-              <span>
-                <strong>Attempts</strong>
-                {history.length}
-              </span>
-              <span>
-                <strong>Average Score</strong>
-                {averageScore}%
-              </span>
-            </div>
+            <section className="mock-history-metrics" aria-live="polite">
+              <article className="mock-history-metric-card">
+                <span>Average score</span>
+                <strong>{metrics.averageScore}%</strong>
+              </article>
+              <article className="mock-history-metric-card">
+                <span>Best score</span>
+                <strong>{metrics.bestScore}%</strong>
+              </article>
+              <article className="mock-history-metric-card">
+                <span>Latest score</span>
+                <strong>{metrics.latestScore}%</strong>
+              </article>
+              <article className="mock-history-metric-card warning">
+                <span>Below 80%</span>
+                <strong>{metrics.belowTargetCount}</strong>
+              </article>
+            </section>
 
-            <ul className="mock-history-list">
-              {history.map((item) => {
-                const percentage =
-                  item.totalQuestions > 0
-                    ? Math.round((item.score / item.totalQuestions) * 100)
-                    : 0;
-                const canRetake = percentage < 80 && (item.questions?.length ?? 0) > 0;
+            <section className="mock-history-controls" aria-label="History controls">
+              <label className="mock-history-control-field">
+                <span>Search</span>
+                <input
+                  type="text"
+                  value={searchValue}
+                  onChange={(event) => setSearchValue(event.target.value)}
+                  placeholder="Category, score, or date"
+                />
+              </label>
 
-                return (
-                  <li key={item.id} className="mock-history-item">
-                    <div className="mock-history-item-header">
-                      <p className="mock-history-item-score">
-                        {item.score} / {item.totalQuestions}
-                        <span>{percentage}%</span>
-                      </p>
-                      <div className="mock-history-item-meta">
-                        {item.isRetake && <span className="mock-history-retake-tag">Retake</span>}
-                        <span className="mock-history-item-date">
-                          {new Date(item.submittedAt).toLocaleString()}
-                        </span>
+              <label className="mock-history-control-field">
+                <span>Sort by</span>
+                <select value={sortBy} onChange={(event) => setSortBy(event.target.value as SortOption)}>
+                  <option value="newest">Newest first</option>
+                  <option value="oldest">Oldest first</option>
+                  <option value="score-high">Highest score</option>
+                  <option value="score-low">Lowest score</option>
+                </select>
+              </label>
+            </section>
+
+            {filteredHistory.length === 0 ? (
+              <p className="mock-history-empty-state">No attempts match your current search.</p>
+            ) : (
+              <ul className="mock-history-list">
+                {filteredHistory.map((item) => {
+                  const percentage = getAttemptPercentage(item);
+                  const canRetake = percentage < 80 && (item.questions?.length ?? 0) > 0;
+
+                  return (
+                    <li key={item.id} className="mock-history-item">
+                      <div className="mock-history-item-header">
+                        <p className="mock-history-item-score">
+                          {item.score} / {item.totalQuestions}
+                          <span>{percentage}%</span>
+                        </p>
+                        <div className="mock-history-item-meta">
+                          {item.isRetake && <span className="mock-history-retake-tag">Retake</span>}
+                          <span className="mock-history-item-date">
+                            {new Date(item.submittedAt).toLocaleString()}
+                          </span>
+                        </div>
                       </div>
-                    </div>
 
-                    <p className="mock-history-item-categories">
-                      <strong>Categories:</strong> {item.selectedCategories.join(", ")}
-                    </p>
+                      <div className="mock-history-score-track" role="presentation">
+                        <span style={{ width: `${Math.min(percentage, 100)}%` }} />
+                      </div>
 
-                    <button
-                      type="button"
-                      className="mock-history-view-btn"
-                      onClick={() => {
-                        setSelectedAttemptId(item.id);
-                        setIsRetakeMode(false);
-                        setRetakeAnswers({});
-                      }}
-                    >
-                      View Attempt Details
-                    </button>
-                    {canRetake && <p className="mock-history-retake-note">Score below 80% — retake available.</p>}
-                  </li>
-                );
-              })}
-            </ul>
+                      <p className="mock-history-item-categories">
+                        <strong>Categories:</strong> {item.selectedCategories.join(", ")}
+                      </p>
+
+                      <div className="mock-history-item-footer">
+                        <button
+                          type="button"
+                          className="mock-history-view-btn"
+                          onClick={() => {
+                            setSelectedAttemptId(item.id);
+                            setIsRetakeMode(false);
+                            setRetakeAnswers({});
+                          }}
+                        >
+                          View Attempt Details
+                        </button>
+
+                        {canRetake && (
+                          <p className="mock-history-retake-note">Score below 80% — retake available.</p>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </>
         )}
       </div>
@@ -308,19 +402,18 @@ const MockExamHistory = ({ userEmail }: MockExamHistoryProps) => {
                   })}
                 </ol>
 
-                {selectedAttempt.totalQuestions > 0 &&
-                  Math.round((selectedAttempt.score / selectedAttempt.totalQuestions) * 100) < 80 && (
-                    <button
-                      type="button"
-                      className="mock-history-view-btn"
-                      onClick={() => {
-                        setIsRetakeMode(true);
-                        setRetakeAnswers({});
-                      }}
-                    >
-                      Retake Exam
-                    </button>
-                  )}
+                {getAttemptPercentage(selectedAttempt) < 80 && (
+                  <button
+                    type="button"
+                    className="mock-history-view-btn"
+                    onClick={() => {
+                      setIsRetakeMode(true);
+                      setRetakeAnswers({});
+                    }}
+                  >
+                    Retake Exam
+                  </button>
+                )}
               </>
             )}
           </div>
