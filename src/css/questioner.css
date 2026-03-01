@@ -33,6 +33,32 @@
   color: #2b0a5c;
 }
 
+
+.multiselect-toggle-btn {
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.2);
+  color: #fff;
+  padding: 8px 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.multiselect-toggle-btn svg {
+  width: 14px;
+  height: 14px;
+  fill: currentcolor;
+}
+
+.multiselect-toggle-btn.active {
+  background: #ffffff;
+  border-color: transparent;
+  color: #2b0a5c;
+}
+
 .question-box {
   background: #ffffff;
   color: #222222;

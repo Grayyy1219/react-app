@@ -173,6 +173,10 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
   const [activeFilter, setActiveFilter] =
     useState<QuestionFilter>(ALL_CATEGORIES);
+  const [isMultiSelectEnabled, setIsMultiSelectEnabled] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<QuestionCategory[]>(
+    [...QUESTION_CATEGORIES],
+  );
   const [currentQuestion, setCurrentQuestion] = useState<QuestionItem | null>(
     null,
   );
@@ -287,12 +291,18 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
   }, []);
 
   const filteredQuestions = useMemo(() => {
+    if (isMultiSelectEnabled) {
+      return questions.filter((question) =>
+        selectedCategories.includes(question.category),
+      );
+    }
+
     if (activeFilter === ALL_CATEGORIES) {
       return questions;
     }
 
     return questions.filter((question) => question.category === activeFilter);
-  }, [activeFilter, questions]);
+  }, [activeFilter, isMultiSelectEnabled, questions, selectedCategories]);
 
   const moveToNextQuestion = (
     pool: QuestionItem[],
@@ -325,6 +335,10 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
   }, [filteredQuestions, selectedIndex]);
 
   const showAnotherQuestion = (filter: QuestionFilter) => {
+    if (isMultiSelectEnabled) {
+      return;
+    }
+
     setActiveFilter(filter);
 
     const pool =
@@ -338,6 +352,43 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
       generalStatsByQuestion,
       currentQuestion?.id,
     );
+  };
+
+  const toggleMultiSelectMode = () => {
+    if (isMultiSelectEnabled) {
+      setIsMultiSelectEnabled(false);
+      setActiveFilter(
+        selectedCategories.length === 1 ? selectedCategories[0] : ALL_CATEGORIES,
+      );
+      return;
+    }
+
+    setIsMultiSelectEnabled(true);
+    setSelectedCategories(
+      activeFilter === ALL_CATEGORIES ? [...QUESTION_CATEGORIES] : [activeFilter],
+    );
+  };
+
+  const toggleCategorySelection = (category: QuestionCategory) => {
+    setSelectedCategories((previous) => {
+      const isAllSelected = previous.length === QUESTION_CATEGORIES.length;
+
+      if (isAllSelected && previous.includes(category)) {
+        return [category];
+      }
+
+      if (previous.includes(category)) {
+        return previous.length === 1
+          ? previous
+          : previous.filter((item) => item !== category);
+      }
+
+      return [...previous, category];
+    });
+  };
+
+  const selectAllCategories = () => {
+    setSelectedCategories([...QUESTION_CATEGORIES]);
   };
 
   const handleAnswerSelect = (index: number) => {
@@ -469,6 +520,8 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
   const shouldShowNoteActions =
     Boolean(currentQuestion?.hint) ||
     Boolean(currentQuestion && currentUserKey);
+  const isAllCategoriesSelectedInMulti =
+    selectedCategories.length === QUESTION_CATEGORIES.length;
 
   return (
     <div className="quiz-container">
@@ -478,16 +531,56 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
         aria-label="Question categories"
       >
         <button
-          className={`category-btn ${activeFilter === ALL_CATEGORIES ? "active" : ""}`}
-          onClick={() => showAnotherQuestion(ALL_CATEGORIES)}
+          type="button"
+          className={`multiselect-toggle-btn ${isMultiSelectEnabled ? "active" : ""}`}
+          onClick={toggleMultiSelectMode}
+          aria-pressed={isMultiSelectEnabled}
+          title="Toggle multi-select categories"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path d="M4 5h11v2H4V5zm0 6h11v2H4v-2zm0 6h11v2H4v-2zm13.5 2-3.5-3.5 1.4-1.4 2.1 2.1 4.1-4.1 1.4 1.4-5.5 5.5z" />
+          </svg>
+          Multi
+        </button>
+        <button
+          className={`category-btn ${
+            isMultiSelectEnabled
+              ? isAllCategoriesSelectedInMulti
+                ? "active"
+                : ""
+              : activeFilter === ALL_CATEGORIES
+                ? "active"
+                : ""
+          }`}
+          onClick={() =>
+            isMultiSelectEnabled
+              ? selectAllCategories()
+              : showAnotherQuestion(ALL_CATEGORIES)
+          }
         >
           {ALL_CATEGORIES}
         </button>
         {QUESTION_CATEGORIES.map((category) => (
           <button
             key={category}
-            className={`category-btn ${activeFilter === category ? "active" : ""}`}
-            onClick={() => showAnotherQuestion(category)}
+            className={`category-btn ${
+              isMultiSelectEnabled
+                ? !isAllCategoriesSelectedInMulti && selectedCategories.includes(category)
+                  ? "active"
+                  : ""
+                : activeFilter === category
+                  ? "active"
+                  : ""
+            }`}
+            onClick={() =>
+              isMultiSelectEnabled
+                ? toggleCategorySelection(category)
+                : showAnotherQuestion(category)
+            }
           >
             {category}
           </button>
@@ -500,7 +593,7 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
         {!isLoading &&
           !error &&
           !currentQuestion &&
-          "No questions found for this category."}
+          "No questions found for the selected categories."}
         {!isLoading && !error && currentQuestion && currentQuestion.question}
       </div>
 
