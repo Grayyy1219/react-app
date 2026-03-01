@@ -60,17 +60,56 @@
 }
 
 .question-box {
+  position: relative;
   background: #ffffff;
   color: #222222;
   width: 900px;
   max-width: 90%;
-  padding: 40px;
+  padding: 48px 40px 40px;
   border-radius: 20px;
   text-align: center;
   font-size: 28px;
   font-weight: 600;
   box-shadow: 0px 15px 40px rgba(0, 0, 0, 0.4);
   margin-bottom: 24px;
+}
+
+.hint-icon-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 999px;
+  background: #f0e1a3;
+  color: #b45309;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(180, 83, 9, 0.24);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.hint-icon-btn:hover {
+  transform: translateY(-1px);
+  background: #fde68a;
+}
+
+.hint-icon-btn:active {
+  transform: scale(0.96);
+}
+
+.hint-icon-btn svg {
+  width: 24px;
+  height: 24px;
+  fill: currentcolor;
+}
+
+.hint-icon-btn.active {
+  background: #facc15;
+  color: #854d0e;
 }
 
 .admin-question-stats {
@@ -121,18 +160,12 @@
   margin-bottom: 16px;
 }
 
-.note-toggle-btn,
 .save-note-btn {
   border: 0;
   border-radius: 999px;
   padding: 8px 14px;
   font-weight: 700;
   cursor: pointer;
-}
-
-.note-toggle-btn {
-  background: #dbeafe;
-  color: #1e3a8a;
 }
 
 .question-note-card {

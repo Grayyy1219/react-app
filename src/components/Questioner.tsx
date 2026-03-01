@@ -588,6 +588,19 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
       </div>
 
       <div className="question-box">
+        {shouldShowNoteActions && currentQuestion && (
+          <button
+            type="button"
+            className={`hint-icon-btn ${showNote ? "active" : ""}`}
+            onClick={handleNoteToggle}
+            aria-label={showNote ? "Hide hint" : "Show hint"}
+            title={showNote ? "Hide hint" : "Show hint"}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M9 21h6v-1H9v1zm3-20a7 7 0 0 0-4.75 12.14c.52.48 1.2 1.44 1.52 2.38.1.29.38.48.68.48h5.1c.3 0 .58-.19.68-.48.32-.94 1-1.9 1.52-2.38A7 7 0 0 0 12 1zm3.7 11.08c-.63.58-1.4 1.56-1.88 2.92h-3.64c-.48-1.36-1.25-2.34-1.88-2.92A5.5 5.5 0 1 1 15.7 12.08z" />
+            </svg>
+          </button>
+        )}
         {isLoading && "Loading question..."}
         {!isLoading && error && error}
         {!isLoading &&
@@ -599,14 +612,6 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
 
       {shouldShowNoteActions && currentQuestion && (
         <div className="question-note-wrap">
-          <button
-            type="button"
-            className="note-toggle-btn"
-            onClick={handleNoteToggle}
-          >
-            {showNote ? "Hide hint" : "Show hint"}
-          </button>
-
           {showNote && (
             <div className="question-note-card">
               {currentQuestion.hint && (
