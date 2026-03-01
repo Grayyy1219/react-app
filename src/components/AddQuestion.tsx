@@ -169,6 +169,38 @@ const parseDelimitedText = (text: string, delimiter: string) =>
     .filter(Boolean)
     .map((line) => parseDelimitedLine(line, delimiter));
 
+const getOptionLabel = (index: number) => {
+  let label = "";
+  let cursor = index;
+
+  do {
+    label = String.fromCharCode(65 + (cursor % 26)) + label;
+    cursor = Math.floor(cursor / 26) - 1;
+  } while (cursor >= 0);
+
+  return label;
+};
+
+const normalizeOptions = (nextOptions: string[]) => {
+  const lastValidOptionIndex = nextOptions.reduce(
+    (lastIndex, option, index) => (option.trim() ? index : lastIndex),
+    -1,
+  );
+
+  if (lastValidOptionIndex === -1) {
+    return ["", ""];
+  }
+
+  const trimmedToLastValue = nextOptions.slice(0, lastValidOptionIndex + 1);
+  const normalized = [...trimmedToLastValue, ""];
+
+  if (normalized.length < 2) {
+    normalized.push("");
+  }
+
+  return normalized;
+};
+
 function AddQuestion({ isAdmin }: AddQuestionProps) {
   const [entryMode, setEntryMode] = useState<"single" | "bulk">("single");
   const [question, setQuestion] = useState("");
@@ -208,22 +240,32 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
   }, [isAdmin]);
 
   const updateOption = (index: number, value: string) => {
-    const next = [...options];
-    next[index] = value;
-    setOptions(next);
+    setOptions((previous) => {
+      const next = [...previous];
+      next[index] = value;
+      return normalizeOptions(next);
+    });
+
+    setCorrectIndex((previous) => {
+      if (previous === null) {
+        return null;
+      }
+
+      return options[index]?.trim() && !value.trim() && previous === index
+        ? null
+        : previous;
+    });
   };
 
   const handleCheckboxChange = (index: number) => {
     setCorrectIndex(index);
   };
 
-  const addOption = () => {
-    setOptions((previous) => [...previous, ""]);
-  };
-
   const removeOption = (index: number) => {
     setOptions((previous) =>
-      previous.filter((_, optionIndex) => optionIndex !== index),
+      normalizeOptions(
+        previous.filter((_, optionIndex) => optionIndex !== index),
+      ),
     );
     setCorrectIndex((previous) => {
       if (previous === null) {
@@ -295,6 +337,14 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
     event.preventDefault();
 
     const trimmedOptions = options.map((option) => option.trim());
+    const lastFilledOptionIndex = trimmedOptions.reduce(
+      (lastIndex, option, index) => (option ? index : lastIndex),
+      -1,
+    );
+    const activeOptions =
+      lastFilledOptionIndex === -1
+        ? []
+        : trimmedOptions.slice(0, lastFilledOptionIndex + 1);
 
     if (!isAdmin && !submissionsOpen) {
       alert("Submissions are temporarily closed by admin.");
@@ -311,11 +361,13 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
       return;
     }
 
-    if (
-      entryMode === "single" &&
-      (trimmedOptions.length === 0 || trimmedOptions.some((option) => !option))
-    ) {
-      alert("Please add at least one answer option.");
+    if (entryMode === "single" && activeOptions.length < 2) {
+      alert("Please add at least two answer options.");
+      return;
+    }
+
+    if (entryMode === "single" && activeOptions.some((option) => !option)) {
+      alert("Please fill option fields without gaps between answers.");
       return;
     }
 
@@ -371,7 +423,7 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
             body: JSON.stringify({
               question: question.trim(),
               category: selectedCategory,
-              options: trimmedOptions,
+              options: activeOptions,
               correctIndex,
               hint: hint.trim(),
               status: isAdmin ? "approved" : "pending",
@@ -484,6 +536,9 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
                   className={`option_row ${correctIndex === index ? "option_row_selected" : ""}`}
                   key={index}
                 >
+                  <span className="option_label" aria-hidden="true">
+                    {getOptionLabel(index)}.
+                  </span>
                   <input
                     type="checkbox"
                     checked={correctIndex === index}
@@ -496,8 +551,7 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
                     onChange={(event) =>
                       updateOption(index, event.target.value)
                     }
-                    placeholder={`Option ${index + 1}`}
-                    required
+                    placeholder={`Option ${getOptionLabel(index)}`}
                     className="option_input"
                   />
                   {options.length > 1 && (
@@ -505,20 +559,15 @@ function AddQuestion({ isAdmin }: AddQuestionProps) {
                       type="button"
                       className="option_remove_btn"
                       onClick={() => removeOption(index)}
+                      aria-label={`Remove option ${getOptionLabel(index)}`}
+                      title={`Remove option ${getOptionLabel(index)}`}
                     >
-                      Remove
+                      ×
                     </button>
                   )}
                 </div>
               ))}
             </div>
-            <button
-              type="button"
-              className="option_add_btn"
-              onClick={addOption}
-            >
-              + Add answer option
-            </button>
           </>
         ) : (
           <div className="bulk_editor">
