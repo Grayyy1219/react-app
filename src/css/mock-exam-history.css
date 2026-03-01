@@ -354,7 +354,7 @@
 
 @media (max-width: 900px) {
   .mock-history-page {
-    padding: 84px 16px 20px;
+    padding: 20px;
   }
 
   .mock-history-card {
@@ -366,11 +366,12 @@
     flex-direction: column;
   }
 
-  .mock-history-metrics,
   .mock-history-controls {
     grid-template-columns: 1fr;
   }
-
+  .mock-history-metrics {
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
+  }
   .mock-history-item-header {
     flex-direction: column;
   }
