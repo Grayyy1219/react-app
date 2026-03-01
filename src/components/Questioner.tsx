@@ -187,6 +187,9 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
   const [error, setError] = useState<string | null>(null);
   const [showNote, setShowNote] = useState(false);
   const [isNoteConfirmOpen, setIsNoteConfirmOpen] = useState(false);
+  const [confirmedHintQuestionId, setConfirmedHintQuestionId] = useState<string | null>(
+    null,
+  );
   const [userNotes, setUserNotes] = useState<Record<string, string>>({});
   const [noteDraft, setNoteDraft] = useState("");
   const [shuffledOptionIndices, setShuffledOptionIndices] = useState<number[]>(
@@ -221,6 +224,10 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
   useEffect(() => {
     setShowNote(false);
     setIsNoteConfirmOpen(false);
+    setConfirmedHintQuestionId(null);
+  }, [currentQuestion]);
+
+  useEffect(() => {
     setNoteDraft(currentQuestion ? (userNotes[currentQuestion.id] ?? "") : "");
   }, [currentQuestion, userNotes]);
 
@@ -389,8 +396,17 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
   };
 
   const handleNoteToggle = () => {
+    if (!currentQuestion) {
+      return;
+    }
+
     if (showNote) {
       setShowNote(false);
+      return;
+    }
+
+    if (confirmedHintQuestionId === currentQuestion.id) {
+      setShowNote(true);
       return;
     }
 
@@ -398,6 +414,11 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
   };
 
   const confirmShowNote = () => {
+    if (!currentQuestion) {
+      return;
+    }
+
+    setConfirmedHintQuestionId(currentQuestion.id);
     setShowNote(true);
     setIsNoteConfirmOpen(false);
   };
@@ -490,7 +511,7 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
             className="note-toggle-btn"
             onClick={handleNoteToggle}
           >
-            {showNote ? "Hide note" : "Show note"}
+            {showNote ? "Hide hint" : "Show hint"}
           </button>
 
           {showNote && (
@@ -531,8 +552,8 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
             aria-modal="true"
             aria-labelledby="note-confirm-title"
           >
-            <h3 id="note-confirm-title">View note?</h3>
-            <p>Notes may include hints or direct answers for this question.</p>
+            <h3 id="note-confirm-title">View hint?</h3>
+            <p>Hints may include direct answers for this question.</p>
             <div className="note-confirm-actions">
               <button
                 type="button"
@@ -546,7 +567,7 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
                 className="note-confirm-accept"
                 onClick={confirmShowNote}
               >
-                View note
+                Confirm
               </button>
             </div>
           </div>
