@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "../css/questioner.css";
 import {
   ALL_CATEGORIES,
@@ -32,6 +32,7 @@ type FirebaseQuestion = {
 };
 
 const SESSION_KEY = "cse-reviewer-user-session";
+const PRIORITIZE_WRONG_SETTING_KEY = "cse-reviewer-prioritize-wrong-questions";
 
 type QuestionStat = {
   correct: number;
@@ -174,9 +175,9 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
   const [activeFilter, setActiveFilter] =
     useState<QuestionFilter>(ALL_CATEGORIES);
   const [isMultiSelectEnabled, setIsMultiSelectEnabled] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState<QuestionCategory[]>(
-    [...QUESTION_CATEGORIES],
-  );
+  const [selectedCategories, setSelectedCategories] = useState<
+    QuestionCategory[]
+  >([...QUESTION_CATEGORIES]);
   const [currentQuestion, setCurrentQuestion] = useState<QuestionItem | null>(
     null,
   );
@@ -191,14 +192,26 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
   const [error, setError] = useState<string | null>(null);
   const [showNote, setShowNote] = useState(false);
   const [isNoteConfirmOpen, setIsNoteConfirmOpen] = useState(false);
-  const [confirmedHintQuestionId, setConfirmedHintQuestionId] = useState<string | null>(
-    null,
-  );
+  const [confirmedHintQuestionId, setConfirmedHintQuestionId] = useState<
+    string | null
+  >(null);
   const [userNotes, setUserNotes] = useState<Record<string, string>>({});
   const [noteDraft, setNoteDraft] = useState("");
   const [shuffledOptionIndices, setShuffledOptionIndices] = useState<number[]>(
     [],
   );
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isWrongAnswerPriorityEnabled, setIsWrongAnswerPriorityEnabled] =
+    useState(() => {
+      const storedValue = localStorage.getItem(PRIORITIZE_WRONG_SETTING_KEY);
+
+      if (storedValue === null) {
+        return true;
+      }
+
+      return storedValue !== "false";
+    });
+  const remainingQuestionIdsRef = useRef<string[]>([]);
 
   const currentUserKey = getCurrentUserKey();
   const noteStorageKey = currentUserKey
@@ -245,6 +258,13 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
       shuffleArray(currentQuestion.options.map((_, index) => index)),
     );
   }, [currentQuestion]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      PRIORITIZE_WRONG_SETTING_KEY,
+      String(isWrongAnswerPriorityEnabled),
+    );
+  }, [isWrongAnswerPriorityEnabled]);
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -310,6 +330,54 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
     generalStatsMap: Record<string, QuestionStat>,
     excludedQuestionId?: string,
   ) => {
+    if (!isWrongAnswerPriorityEnabled) {
+      const poolIds = new Set(pool.map((question) => question.id));
+
+      const normalizedQueue = remainingQuestionIdsRef.current.filter(
+        (questionId) => {
+          if (!poolIds.has(questionId)) {
+            return false;
+          }
+
+          if (
+            excludedQuestionId &&
+            pool.length > 1 &&
+            questionId === excludedQuestionId
+          ) {
+            return false;
+          }
+
+          return true;
+        },
+      );
+
+      const nextQueue =
+        normalizedQueue.length > 0
+          ? normalizedQueue
+          : shuffleArray(
+              pool
+                .filter(
+                  (question) =>
+                    !(
+                      excludedQuestionId &&
+                      pool.length > 1 &&
+                      question.id === excludedQuestionId
+                    ),
+                )
+                .map((question) => question.id),
+            );
+
+      const [nextQuestionId, ...remaining] = nextQueue;
+      remainingQuestionIdsRef.current = remaining;
+      const nextQuestion =
+        pool.find((question) => question.id === nextQuestionId) ?? null;
+
+      setCurrentQuestion(nextQuestion);
+      setSelectedIndex(null);
+
+      return;
+    }
+
     setCurrentQuestion(
       getWeightedRandomQuestion(
         pool,
@@ -320,6 +388,10 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
     );
     setSelectedIndex(null);
   };
+
+  useEffect(() => {
+    remainingQuestionIdsRef.current = [];
+  }, [filteredQuestions, isWrongAnswerPriorityEnabled]);
 
   useEffect(() => {
     if (selectedIndex !== null) {
@@ -358,14 +430,18 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
     if (isMultiSelectEnabled) {
       setIsMultiSelectEnabled(false);
       setActiveFilter(
-        selectedCategories.length === 1 ? selectedCategories[0] : ALL_CATEGORIES,
+        selectedCategories.length === 1
+          ? selectedCategories[0]
+          : ALL_CATEGORIES,
       );
       return;
     }
 
     setIsMultiSelectEnabled(true);
     setSelectedCategories(
-      activeFilter === ALL_CATEGORIES ? [...QUESTION_CATEGORIES] : [activeFilter],
+      activeFilter === ALL_CATEGORIES
+        ? [...QUESTION_CATEGORIES]
+        : [activeFilter],
     );
   };
 
@@ -537,11 +613,7 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
           aria-pressed={isMultiSelectEnabled}
           title="Toggle multi-select categories"
         >
-          <svg
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-            focusable="false"
-          >
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path d="M4 5h11v2H4V5zm0 6h11v2H4v-2zm0 6h11v2H4v-2zm13.5 2-3.5-3.5 1.4-1.4 2.1 2.1 4.1-4.1 1.4 1.4-5.5 5.5z" />
           </svg>
           Multi
@@ -569,7 +641,8 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
             key={category}
             className={`category-btn ${
               isMultiSelectEnabled
-                ? !isAllCategoriesSelectedInMulti && selectedCategories.includes(category)
+                ? !isAllCategoriesSelectedInMulti &&
+                  selectedCategories.includes(category)
                   ? "active"
                   : ""
                 : activeFilter === category
@@ -585,6 +658,55 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
             {category}
           </button>
         ))}
+        <div className="settings-menu-wrap">
+          <button
+            type="button"
+            className={`settings-btn ${isSettingsOpen ? "active" : ""}`}
+            onClick={() => setIsSettingsOpen((previous) => !previous)}
+            aria-expanded={isSettingsOpen}
+            aria-label="Open practice settings"
+            title="Practice settings"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+            >
+              <path
+                fill="#fbfbfb"
+                d="m9.25 22l-.4-3.2q-.325-.125-.612-.3t-.563-.375L4.7 19.375l-2.75-4.75l2.575-1.95Q4.5 12.5 4.5 12.338v-.675q0-.163.025-.338L1.95 9.375l2.75-4.75l2.975 1.25q.275-.2.575-.375t.6-.3l.4-3.2h5.5l.4 3.2q.325.125.613.3t.562.375l2.975-1.25l2.75 4.75l-2.575 1.95q.025.175.025.338v.674q0 .163-.05.338l2.575 1.95l-2.75 4.75l-2.95-1.25q-.275.2-.575.375t-.6.3l-.4 3.2zm2.8-6.5q1.45 0 2.475-1.025T15.55 12t-1.025-2.475T12.05 8.5q-1.475 0-2.488 1.025T8.55 12t1.013 2.475T12.05 15.5"
+              />
+            </svg>
+          </button>
+
+          {isSettingsOpen && (
+            <div
+              className="settings-menu"
+              role="dialog"
+              aria-label="Practice settings"
+            >
+              <label
+                className="settings-checkbox"
+                htmlFor="prioritize-wrong-toggle"
+              >
+                <input
+                  id="prioritize-wrong-toggle"
+                  type="checkbox"
+                  checked={isWrongAnswerPriorityEnabled}
+                  onChange={(event) =>
+                    setIsWrongAnswerPriorityEnabled(event.target.checked)
+                  }
+                />
+                Show wrong-answered questions more often
+              </label>
+              <p>
+                Turn this off to get every question once before repeats.
+                Question order stays shuffled.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="question-box">
@@ -685,22 +807,22 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
         >
           {isCorrectSelection
             ? "✅ Correct answer! Showing less of this question over time."
-            : `❌ Wrong answer. Correct answer: ${currentQuestion.options[currentQuestion.correctIndex]}. You'll see this more often for practice.`}
+            : `❌ Wrong answer. Correct answer: ${currentQuestion.options[currentQuestion.correctIndex]}.${isWrongAnswerPriorityEnabled ? " You'll see this more often for practice." : ""}`}
         </div>
       )}
 
       <div className="choices">
         {currentQuestion &&
           shuffledOptionIndices.map((optionIndex, visualIndex) => (
-          <button
-            key={`${currentQuestion.id}-${optionIndex}`}
-            type="button"
-            className={`choice ${["red", "blue", "yellow", "green"][visualIndex % 4]} ${getChoiceClassName(optionIndex)}`}
-            onClick={() => handleAnswerSelect(optionIndex)}
-            disabled={isAnswered}
-          >
-            {currentQuestion.options[optionIndex]}
-          </button>
+            <button
+              key={`${currentQuestion.id}-${optionIndex}`}
+              type="button"
+              className={`choice ${["red", "blue", "yellow", "green"][visualIndex % 4]} ${getChoiceClassName(optionIndex)}`}
+              onClick={() => handleAnswerSelect(optionIndex)}
+              disabled={isAnswered}
+            >
+              {currentQuestion.options[optionIndex]}
+            </button>
           ))}
       </div>
 

@@ -58,6 +58,56 @@
   color: #2b0a5c;
 }
 
+.settings-menu-wrap {
+  position: relative;
+}
+button.settings-btn.active path {
+  fill: var(--accent);
+}
+.settings-btn {
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.2);
+  color: #fff;
+  padding: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-btn.active {
+  background: #ffffff;
+  color: #2b0a5c;
+}
+
+.settings-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: min(300px, 90vw);
+  border-radius: 12px;
+  background: #ffffff;
+  color: #111827;
+  padding: 12px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.26);
+  z-index: 10;
+}
+
+.settings-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.settings-menu p {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
 .question-box {
   font-family: Arial, Helvetica, sans-serif;
   position: relative;
