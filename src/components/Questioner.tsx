@@ -475,6 +475,13 @@ const Questioner = ({ isAdmin = false }: QuestionerProps) => {
     setSelectedIndex(index);
 
     const answeredCorrectly = index === currentQuestion.correctIndex;
+
+    if (!answeredCorrectly && currentQuestion.hint) {
+      setConfirmedHintQuestionId(currentQuestion.id);
+      setShowNote(true);
+      setIsNoteConfirmOpen(false);
+    }
+
     const userKey = getCurrentUserKey();
     const currentGeneral = generalStatsByQuestion[currentQuestion.id] ?? {
       correct: 0,
